@@ -39,6 +39,6 @@ npm install
 npm run dev
 
 
-### Author
+## Author
 Ndong Ghislain Che
 HND Software Engineering
