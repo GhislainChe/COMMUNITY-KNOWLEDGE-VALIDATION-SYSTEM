@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { requireAuth } = require("./middleware/auth");
-
+const practiceRoutes = require("./routes/practice.routes");
 const pool = require("./db/pool");
 const authRoutes = require("./routes/auth.routes");
 
@@ -25,6 +25,7 @@ app.get("/api/me", requireAuth, async (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/practices", practiceRoutes);
 
 console.log("DB_PASSWORD loaded?", process.env.DB_PASSWORD ? "YES" : "NO");
 const PORT = process.env.PORT || 5000;
