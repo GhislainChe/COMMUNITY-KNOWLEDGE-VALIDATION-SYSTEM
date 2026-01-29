@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+const { requireAuth } = require("./middleware/auth");
 
 const pool = require("./db/pool");
 const authRoutes = require("./routes/auth.routes");
@@ -16,6 +17,11 @@ app.get("/api/health", async (req, res) => {
   } catch (err) {
     res.status(500).json({ status: "fail", error: err.message });
   }
+});
+
+app.get("/api/me", requireAuth, async (req, res) => {
+  // req.user comes from the token payload
+  return res.json({ message: "You are authenticated", user: req.user });
 });
 
 app.use("/api/auth", authRoutes);
