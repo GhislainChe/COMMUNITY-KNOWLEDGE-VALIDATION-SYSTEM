@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const pool = require("./db/pool");
+const authRoutes = require("./routes/auth.routes");
 
 const app = express();
 app.use(cors());
@@ -16,6 +17,8 @@ app.get("/api/health", async (req, res) => {
     res.status(500).json({ status: "fail", error: err.message });
   }
 });
+
+app.use("/api/auth", authRoutes);
 
 console.log("DB_PASSWORD loaded?", process.env.DB_PASSWORD ? "YES" : "NO");
 const PORT = process.env.PORT || 5000;
