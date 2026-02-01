@@ -153,6 +153,8 @@ router.post(
         newEffectivenessScore: avgScore,
         confidenceLevel,
         reportsCount: countReports,
+        authorCredibilityScore: newCredibility
+
       });
     } catch (err) {
       // Duplicate outcome report case:
