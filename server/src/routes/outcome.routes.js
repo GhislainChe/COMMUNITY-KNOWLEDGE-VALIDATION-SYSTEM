@@ -50,11 +50,9 @@ router.post(
       }
 
       if (practiceRows[0].status !== "ACTIVE") {
-        return res
-          .status(403)
-          .json({
-            message: "This practice is not available for outcome reporting",
-          });
+        return res.status(403).json({
+          message: "This practice is not available for outcome reporting",
+        });
       }
 
       // userId comes from the JWT (this prevents identity cheating)
@@ -122,6 +120,32 @@ router.post(
         [avgScore, confidenceLevel, practiceId],
       );
 
+      // 6) Update contributor credibility score (author of the practice)
+      // Why? Credibility is based on how well the user's practices perform over time.
+
+      // a) Get the practice owner (author)
+      const [ownerRows] = await pool.query(
+        "SELECT userId FROM practices WHERE practiceId = ?",
+        [practiceId],
+      );
+
+      const ownerId = ownerRows[0].userId;
+
+      // b) Compute new credibility as average effectiveness of all author's active practices
+      const [credRows] = await pool.query(
+        "SELECT AVG(effectivenessScore) AS credibility FROM practices WHERE userId = ? AND status='ACTIVE'",
+        [ownerId],
+      );
+
+      const newCredibility =
+        credRows[0].credibility === null ? 0 : Number(credRows[0].credibility);
+
+      // c) Update user's credibilityScore
+      await pool.query(
+        "UPDATE users SET credibilityScore = ? WHERE userId = ?",
+        [newCredibility, ownerId],
+      );
+
       // 6) Return response
       return res.status(201).json({
         message: "Outcome report submitted",
@@ -134,11 +158,9 @@ router.post(
       // Duplicate outcome report case:
       // MySQL will throw an error because of UNIQUE(userId, practiceId)
       if (err.code === "ER_DUP_ENTRY") {
-        return res
-          .status(409)
-          .json({
-            message: "You have already submitted an outcome for this practice",
-          });
+        return res.status(409).json({
+          message: "You have already submitted an outcome for this practice",
+        });
       }
 
       return res
