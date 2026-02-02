@@ -6,6 +6,7 @@ const practiceRoutes = require("./routes/practice.routes");
 const pool = require("./db/pool");
 const authRoutes = require("./routes/auth.routes");
 const outcomeRoutes = require("./routes/outcome.routes");
+const commentRoutes = require("./routes/comment.routes");
 
 const app = express();
 app.use(cors());
@@ -28,6 +29,7 @@ app.get("/api/me", requireAuth, async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/practices", practiceRoutes);
 app.use("/api", outcomeRoutes);
+app.use("/api", commentRoutes);
 
 console.log("DB_PASSWORD loaded?", process.env.DB_PASSWORD ? "YES" : "NO");
 const PORT = process.env.PORT || 5000;

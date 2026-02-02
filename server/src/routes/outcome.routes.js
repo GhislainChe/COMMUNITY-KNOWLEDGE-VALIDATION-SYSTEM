@@ -105,7 +105,7 @@ router.post(
       // 4) Recalculate practice score using ALL outcome reports
       // Why? Each new report changes the average effectiveness.
       const [rows] = await pool.query(
-        "SELECT AVG(outcomeScore) AS avgScore, COUNT(*) AS countReports FROM outcomeReports WHERE practiceId = ?",
+        "SELECT AVG(outcomeScore) AS avgScore, COUNT(*) AS countReports FROM outcomeReports WHERE practiceId = ? AND status='VALID'",
         [practiceId],
       );
 
@@ -153,8 +153,7 @@ router.post(
         newEffectivenessScore: avgScore,
         confidenceLevel,
         reportsCount: countReports,
-        authorCredibilityScore: newCredibility
-
+        authorCredibilityScore: newCredibility,
       });
     } catch (err) {
       // Duplicate outcome report case:
