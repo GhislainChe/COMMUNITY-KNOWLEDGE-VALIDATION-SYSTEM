@@ -9,6 +9,7 @@ const outcomeRoutes = require("./routes/outcome.routes");
 const commentRoutes = require("./routes/comment.routes");
 const flagRoutes = require("./routes/flag.routes");
 const moderationRoutes = require("./routes/moderation.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
 app.use(cors());
@@ -34,6 +35,7 @@ app.use("/api", outcomeRoutes);
 app.use("/api", commentRoutes);
 app.use("/api", flagRoutes);
 app.use("/api", moderationRoutes);
+app.use("/api", adminRoutes);
 
 console.log("DB_PASSWORD loaded?", process.env.DB_PASSWORD ? "YES" : "NO");
 const PORT = process.env.PORT || 5000;
