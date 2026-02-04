@@ -41,13 +41,47 @@ export default function LandingPage() {
 
       {/* Hero section */}
       <main className="mx-auto max-w-6xl px-6">
-        <div className="grid min-h-[calc(100vh-90px)] items-center gap-10 lg:grid-cols-2">
+        <div className="grid min-h-[calc(100vh-150px)] items-center gap-10 lg:grid-cols-2">
           {/* Left content */}
           <div>
-            <h1 className="font-heading text-4xl font-semibold leading-tight sm:text-5xl">
-              Preserve community knowledge.{" "}
-              <span className="text-emerald-600">Validate what works.</span>
-            </h1>
+            {/* <div className="mb-10 hidden lg:flex items-center gap-6">
+  <div className="h-24 w-px bg-slate-200" />
+
+  <div className="flex flex-col gap-4 text-sm text-slate-600">
+    <div className="flex items-center gap-2">
+      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      Community-driven
+    </div>
+    <div className="flex items-center gap-2">
+      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      Outcome-based validation
+    </div>
+    <div className="flex items-center gap-2">
+      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      Trust & credibility scoring
+    </div>
+  </div>
+</div> */}
+
+            <h1 className="
+  font-heading
+  font-semibold 
+  text-3xl 
+  sm:text-4xl 
+  lg:text-5xl 
+  xl:text-5xl
+">
+  Preserve community knowledge.
+  <span className="block text-emerald-600">
+    Validate what works.
+  </span>
+</h1>
+
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+  <span className="h-2 w-2 rounded-full bg-emerald-600" />
+  Research-backed community validation system
+</div>
+
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600">
               CKVS helps communities capture agricultural practices, record real
@@ -111,8 +145,7 @@ export default function LandingPage() {
             </div>
 
             <p className="mt-4 text-xs text-slate-500">
-              Academic project demo — Agricultural practices in a selected
-              community.
+              Agricultural practices
             </p>
           </div>
 
