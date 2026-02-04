@@ -1,6 +1,11 @@
 import { Link, Navigate } from "react-router-dom";
 import { isLoggedIn } from "../auth/token";
-import { ArrowRight, ShieldCheck, Search, MessageSquareText } from "lucide-react";
+import {
+  ArrowRight,
+  ShieldCheck,
+  Search,
+  MessageSquareText,
+} from "lucide-react";
 import heroImg from "../assets/hero.jpg"; // <-- add your image here
 
 export default function LandingPage() {
@@ -45,8 +50,9 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600">
-              CKVS helps communities capture agricultural practices, record real outcomes, and
-              build trust over time—so effective knowledge is preserved and easy to discover.
+              CKVS helps communities capture agricultural practices, record real
+              outcomes, and build trust over time—so effective knowledge is
+              preserved and easy to discover.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
@@ -65,8 +71,48 @@ export default function LandingPage() {
               </Link>
             </div>
 
+            {/* Mini cards to balance left side on large screens */}
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-xs font-semibold text-slate-500">
+                  Validated Practices
+                </p>
+                <p className="mt-1 font-heading text-2xl font-semibold text-slate-900">
+                  120+
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Ranked by real outcomes.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-xs font-semibold text-slate-500">
+                  Outcome Reports
+                </p>
+                <p className="mt-1 font-heading text-2xl font-semibold text-emerald-700">
+                  350+
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Effective • Partial • Ineffective.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-xs font-semibold text-slate-500">
+                  Trusted Contributors
+                </p>
+                <p className="mt-1 font-heading text-2xl font-semibold text-slate-900">
+                  60+
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Credibility scoring built-in.
+                </p>
+              </div>
+            </div>
+
             <p className="mt-4 text-xs text-slate-500">
-              Academic project demo — Agricultural practices in a selected community.
+              Academic project demo — Agricultural practices in a selected
+              community.
             </p>
           </div>
 
@@ -97,9 +143,12 @@ export default function LandingPage() {
                 <div className="mb-3 inline-flex rounded-2xl bg-emerald-100 p-3 text-emerald-700">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
-                <h3 className="font-heading text-lg font-semibold">Outcome validation</h3>
+                <h3 className="font-heading text-lg font-semibold">
+                  Outcome validation
+                </h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  Practices gain credibility based on real results, not opinions.
+                  Practices gain credibility based on real results, not
+                  opinions.
                 </p>
               </div>
 
@@ -107,7 +156,9 @@ export default function LandingPage() {
                 <div className="mb-3 inline-flex rounded-2xl bg-emerald-100 p-3 text-emerald-700">
                   <Search className="h-5 w-5" />
                 </div>
-                <h3 className="font-heading text-lg font-semibold">Easy discovery</h3>
+                <h3 className="font-heading text-lg font-semibold">
+                  Easy discovery
+                </h3>
                 <p className="mt-1 text-sm text-slate-600">
                   Search by crop, problem type, season and location.
                 </p>
@@ -117,7 +168,9 @@ export default function LandingPage() {
                 <div className="mb-3 inline-flex rounded-2xl bg-emerald-100 p-3 text-emerald-700">
                   <MessageSquareText className="h-5 w-5" />
                 </div>
-                <h3 className="font-heading text-lg font-semibold">Community discussions</h3>
+                <h3 className="font-heading text-lg font-semibold">
+                  Community discussions
+                </h3>
                 <p className="mt-1 text-sm text-slate-600">
                   Talk under each practice to clarify and share improvements.
                 </p>
@@ -127,9 +180,12 @@ export default function LandingPage() {
                 <div className="mb-3 inline-flex rounded-2xl bg-emerald-100 p-3 text-emerald-700">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
-                <h3 className="font-heading text-lg font-semibold">Trust scoring</h3>
+                <h3 className="font-heading text-lg font-semibold">
+                  Trust scoring
+                </h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  Contributors gain credibility as their practices prove effective.
+                  Contributors gain credibility as their practices prove
+                  effective.
                 </p>
               </div>
             </div>
