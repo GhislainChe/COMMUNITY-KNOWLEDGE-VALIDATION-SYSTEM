@@ -20,7 +20,7 @@ export default function LoginPage() {
     try {
       const res = await api.post("/auth/login", { email, password });
       setToken(res.data.token);
-      setMsg("Login successful ✅");
+      setMsg("Login successful");
     } catch (err) {
       setMsg(err.response?.data?.message || "Login failed");
     } finally {
