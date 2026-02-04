@@ -11,3 +11,7 @@ export function getToken() {
 export function clearToken() {
   localStorage.removeItem(KEY);
 }
+
+export function isLoggedIn() {
+  return !!localStorage.getItem("ckvs_token");
+}
