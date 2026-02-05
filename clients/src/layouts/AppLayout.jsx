@@ -70,12 +70,12 @@ export default function AppLayout() {
             </div>
 
             {/* Tab title (starts after sidebar width visually) */}
-            <div className="hidden md:block">
+            {/* <div className="hidden md:block">
               <span className="text-sm text-slate-400">/</span>{" "}
               <span className="font-heading text-lg font-semibold">
                 {currentTab}
               </span>
-            </div>
+            </div> */}
           </div>
 
           {/* Right: actions */}
