@@ -26,6 +26,7 @@ export default function LoginPage() {
       setToken(res.data.token);
       setMsg("Login successful");
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
     } catch (err) {
       setMsg(err.response?.data?.message || "Login failed");
     } finally {
