@@ -14,6 +14,18 @@ function AppHomePlaceholder() {
   );
 }
 
+function AppPlaceholder() {
+  return (
+    <div className="min-h-screen bg-slate-50 p-10">
+      <h1 className="text-2xl font-semibold">Welcome to CKVS App ✅</h1>
+      <p className="mt-2 text-slate-600">
+        Next we will build the sidebar layout and real pages.
+      </p>
+    </div>
+  );
+}
+
+
 export default function App() {
   return (
     <Routes>
@@ -22,6 +34,7 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
 
       <Route path="/app/practices" element={<AppHomePlaceholder />} />
+      <Route path="/app" element={<AppPlaceholder />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

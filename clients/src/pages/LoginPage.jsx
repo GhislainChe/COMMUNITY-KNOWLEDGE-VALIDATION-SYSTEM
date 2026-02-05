@@ -3,8 +3,12 @@ import { api } from "../api/api";
 import { setToken } from "../auth/token";
 import { Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, UserCircle2 } from "lucide-react";
+import { Navigate } from "react-router-dom";
+import { isAuthenticated } from "../utils/auth";
+
 
 export default function LoginPage() {
+  if (isAuthenticated()) return <Navigate to="/app" replace />;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);

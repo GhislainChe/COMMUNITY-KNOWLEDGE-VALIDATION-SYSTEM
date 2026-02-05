@@ -1,4 +1,4 @@
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { isLoggedIn } from "../auth/token";
 import {
   ArrowRight,
@@ -7,9 +7,11 @@ import {
   MessageSquareText,
 } from "lucide-react";
 import heroImg from "../assets/hero.jpg"; // <-- add your image here
+import { Navigate } from "react-router-dom";
+import { isAuthenticated } from "../utils/auth";
 
 export default function LandingPage() {
-  if (isLoggedIn()) return <Navigate to="/app/practices" replace />;
+  if (isAuthenticated()) return <Navigate to="/app" replace />;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -63,25 +65,26 @@ export default function LandingPage() {
   </div>
 </div> */}
 
-            <h1 className="
+            <h1
+              className="
   font-heading
   font-semibold 
   text-3xl 
   sm:text-4xl 
   lg:text-5xl 
   xl:text-5xl
-">
-  Preserve community knowledge.
-  <span className="block text-emerald-600">
-    Validate what works.
-  </span>
-</h1>
+"
+            >
+              Preserve community knowledge.
+              <span className="block text-emerald-600">
+                Validate what works.
+              </span>
+            </h1>
 
             <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
-  <span className="h-2 w-2 rounded-full bg-emerald-600" />
-  Research-backed community validation system
-</div>
-
+              <span className="h-2 w-2 rounded-full bg-emerald-600" />
+              Research-backed community validation system
+            </div>
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600">
               CKVS helps communities capture agricultural practices, record real

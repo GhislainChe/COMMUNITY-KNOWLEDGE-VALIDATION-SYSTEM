@@ -3,8 +3,12 @@ import { api } from "../api/api";
 import { setToken } from "../auth/token";
 import { Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, UserCircle2, User } from "lucide-react";
+import { Navigate } from "react-router-dom";
+import { isAuthenticated } from "../utils/auth";
+
 
 export default function RegisterPage() {
+  if (isAuthenticated()) return <Navigate to="/app" replace />;
   const [fullName, setFullName] = useState("");
   const [gender, setGender] = useState(""); // "MALE" | "FEMALE" | "OTHER"
   const [email, setEmail] = useState("");
