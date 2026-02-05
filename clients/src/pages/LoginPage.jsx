@@ -21,6 +21,7 @@ export default function LoginPage() {
       const res = await api.post("/auth/login", { email, password });
       setToken(res.data.token);
       setMsg("Login successful");
+      localStorage.setItem("token", res.data.token);
     } catch (err) {
       setMsg(err.response?.data?.message || "Login failed");
     } finally {

@@ -43,6 +43,7 @@ export default function RegisterPage() {
 
       setToken(res.data.token);
       setMsg("Account created successfully");
+      localStorage.setItem("token", res.data.token);
     } catch (err) {
       setMsg(err.response?.data?.message || "Registration failed");
     } finally {
