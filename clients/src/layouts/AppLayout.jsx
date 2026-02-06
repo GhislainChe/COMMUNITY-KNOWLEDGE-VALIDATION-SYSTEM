@@ -16,6 +16,8 @@ import { useEffect, useMemo, useState } from "react";
 export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
 
   const [theme, setTheme] = useState(getTheme());
 

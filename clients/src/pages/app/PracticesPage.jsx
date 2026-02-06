@@ -105,7 +105,7 @@ export default function PracticesPage() {
                     <span className="rounded-full bg-black/45 px-3 py-1 text-[11px] font-semibold text-white">
                       {p.location || "Location"}
                     </span>
-                    <span className="rounded-full bg-black/55 px-3 py-1 text-[11px] font-semibold text-white">
+                    <span className="rounded-full bg-black/45 px-3 py-1 text-[11px] font-semibold text-white">
                       {p.season || "Season"}
                     </span>
                   </div>
@@ -121,9 +121,9 @@ export default function PracticesPage() {
                   </div>
                 </div>
 
-                {/* Button (slimmer like sample) */}
+                {/* Button */}
                 <div className="absolute bottom-3 left-3 right-3 z-10">
-                  <button className="w-full rounded-full bg-white py-3 text-[13px] font-semibold text-slate-900 shadow-sm hover:bg-slate-100">
+                  <button className="w-full rounded-full bg-white py-3 text-[13px] font-semibold text-slate-900 shadow-sm transition bg-white hover:bg-slate-100 dark:bg-emerald-600/100 dark:text-white dark:hover:bg-white">
                     View details
                   </button>
                 </div>
