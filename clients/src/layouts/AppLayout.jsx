@@ -112,9 +112,9 @@ export default function AppLayout() {
       </header>
 
       {/* BODY */}
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[260px_1fr]">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[260px_1fr] h-[calc(100vh-72px)]">
         {/* Sidebar */}
-        <aside className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <aside className="h-full sticky top-0 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
           <nav className="space-y-2">
             <NavLink
               to="practices"
@@ -180,7 +180,7 @@ export default function AppLayout() {
         </aside>
 
         {/* Main content */}
-        <main className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <main className="h-full overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
           <Outlet />
         </main>
       </div>
