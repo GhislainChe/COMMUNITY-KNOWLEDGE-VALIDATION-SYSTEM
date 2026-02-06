@@ -45,12 +45,12 @@ router.get("/", async (req, res) => {
     const q = req.query.q ? `%${req.query.q}%` : null;
 
     let sql =
-      "SELECT practiceId, title, effectivenessScore, confidenceLevel, createdAt FROM practices WHERE status='ACTIVE' ORDER BY createdAt DESC";
+      "SELECT p.practiceId, p.title, p.description, p.steps, p.effectivenessScore, p.confidenceLevel, p.createdAt, u.fullName AS authorName FROM practices p JOIN users u ON u.userId = p.userId WHERE p.status='ACTIVE' ORDER BY p.createdAt DESC";
     let params = [];
 
     if (q) {
       sql =
-        "SELECT practiceId, title, effectivenessScore, confidenceLevel, createdAt FROM practices WHERE status='ACTIVE' AND title LIKE ? ORDER BY createdAt DESC";
+        "SELECT p.practiceId, p.title, p.description, p.steps, p.effectivenessScore, p.confidenceLevel, p.createdAt, u.fullName AS authorName FROM practices p JOIN users u ON u.userId = p.userId WHERE p.status='ACTIVE' ORDER BY createdAt DESC";
       params = [q];
     }
 
