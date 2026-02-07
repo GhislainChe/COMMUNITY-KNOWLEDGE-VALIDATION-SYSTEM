@@ -1,11 +1,14 @@
 // clients/src/pages/app/PracticesPage.jsx
 import { useEffect, useState } from "react";
 import { api } from "../../api/api";
+import { useNavigate } from "react-router-dom";
+
 
 // ✅ Put a default image in: clients/src/assets/practice-default.jpg
 import defaultPracticeImg from "../../assets/practice-default.jpg";
 
 export default function PracticesPage() {
+  const navigate = useNavigate();
   const [practices, setPractices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -123,7 +126,7 @@ export default function PracticesPage() {
 
                 {/* Button */}
                 <div className="absolute bottom-3 left-3 right-3 z-10">
-                  <button className="w-full rounded-full bg-white py-3 text-[13px] font-semibold text-slate-900 shadow-sm transition bg-white hover:bg-slate-100 dark:bg-emerald-600/100 dark:text-white dark:hover:bg-white">
+                  <button onClick={() => navigate(`/app/practices/${p.practiceId}`)} className="w-full rounded-full bg-white py-3 text-[13px] font-semibold text-slate-900 shadow-sm transition bg-white hover:bg-slate-100 dark:bg-emerald-600/100 dark:text-white dark:hover:bg-white">
                     View details
                   </button>
                 </div>
