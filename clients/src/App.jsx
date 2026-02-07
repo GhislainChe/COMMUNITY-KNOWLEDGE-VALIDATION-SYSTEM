@@ -42,13 +42,14 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="practices/:id" element={<PracticeDetailsPage />} />
-
 
       {/* App shell */}
       <Route path="/app" element={<AppLayout />}>
         <Route index element={<Navigate to="practices" replace />} />
+
         <Route path="practices" element={<PracticesPage />} />
+        <Route path="practices/:id" element={<PracticeDetailsPage />} />
+
         <Route path="discover" element={<DiscoverPage />} />
         <Route path="discussions" element={<DiscussionsPage />} />
         <Route path="about" element={<AboutPage />} />
@@ -60,5 +61,6 @@ export default function App() {
     </Routes>
   );
 }
+
 
 

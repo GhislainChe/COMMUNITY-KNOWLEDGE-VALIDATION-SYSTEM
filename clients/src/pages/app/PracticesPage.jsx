@@ -126,7 +126,7 @@ export default function PracticesPage() {
 
                 {/* Button */}
                 <div className="absolute bottom-3 left-3 right-3 z-10">
-                  <button onClick={() => navigate(`/app/practices/${p.practiceId}`)} className="w-full rounded-full bg-white py-3 text-[13px] font-semibold text-slate-900 shadow-sm transition bg-white hover:bg-slate-100 dark:bg-emerald-600/100 dark:text-white dark:hover:bg-white">
+                  <button type="button" onClick={(e) => { e.preventDefault(); navigate(`/app/practices/${p.practiceId}`); }} className="w-full rounded-full bg-white py-3 text-[13px] font-semibold text-slate-900 shadow-sm transition bg-white hover:bg-slate-100 dark:bg-emerald-600/100 dark:text-white dark:hover:bg-white">
                     View details
                   </button>
                 </div>
