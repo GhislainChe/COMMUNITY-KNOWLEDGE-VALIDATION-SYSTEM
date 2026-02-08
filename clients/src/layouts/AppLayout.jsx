@@ -8,6 +8,7 @@ import {
   LogOut,
   Sun,
   Moon,
+  Bookmark,
 } from "lucide-react";
 import { logout } from "../utils/auth";
 import { getTheme, toggleTheme, applyTheme } from "../utils/theme";
@@ -44,6 +45,7 @@ export default function AppLayout() {
     const path = location.pathname;
 
     if (path.includes("/app/practices")) return "Practices";
+    if (path.includes("/app/bookmarks")) return "Bookmarks";
     if (path.includes("/app/discover")) return "Discover";
     if (path.includes("/app/discussions")) return "Discussions";
     if (path.includes("/app/about")) return "About";
@@ -184,6 +186,16 @@ export default function AppLayout() {
                 </NavLink>
 
                 <NavLink
+                  to="bookmarks"
+                  onClick={() => setMobileNavOpen(false)}
+                  className={({ isActive }) =>
+                    `${linkBase} ${isActive ? linkActive : linkInactive}`
+                  }
+                >
+                  <Bookmark className="h-5 w-5" /> Bookmarks
+                </NavLink>
+
+                <NavLink
                   to="discover"
                   onClick={() => setMobileNavOpen(false)}
                   className={({ isActive }) =>
@@ -256,6 +268,16 @@ export default function AppLayout() {
             >
               <Leaf className="h-5 w-5" />
               Practices
+            </NavLink>
+
+            <NavLink
+              to="bookmarks"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              <Bookmark className="h-5 w-5" />
+              Bookmarks
             </NavLink>
 
             <NavLink

@@ -7,6 +7,7 @@ import PracticeDetailsPage from "./pages/app/PracticeDetailsPage";
 
 import AppLayout from "./layouts/AppLayout";
 import PracticesPage from "./pages/app/PracticesPage";
+import BookmarksPage from "./pages/app/BookmarksPage";
 import DiscoverPage from "./pages/app/DiscoverPage";
 import DiscussionsPage from "./pages/app/DiscussionsPage";
 import AboutPage from "./pages/app/AboutPage";
@@ -49,7 +50,7 @@ export default function App() {
 
         <Route path="practices" element={<PracticesPage />} />
         <Route path="practices/:id" element={<PracticeDetailsPage />} />
-
+        <Route path="bookmarks" element={<BookmarksPage />} />
         <Route path="discover" element={<DiscoverPage />} />
         <Route path="discussions" element={<DiscussionsPage />} />
         <Route path="about" element={<AboutPage />} />
