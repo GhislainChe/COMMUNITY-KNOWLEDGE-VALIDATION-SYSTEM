@@ -15,7 +15,9 @@ router.post("/", requireAuth, async (req, res) => {
 
     // Validate input (basic)
     if (!title || !description || !steps) {
-      return res.status(400).json({ message: "title, description, and steps are required" });
+      return res
+        .status(400)
+        .json({ message: "title, description, and steps are required" });
     }
 
     // req.user comes from JWT payload (set by requireAuth)
@@ -23,7 +25,7 @@ router.post("/", requireAuth, async (req, res) => {
 
     const [result] = await pool.query(
       "INSERT INTO practices (userId, title, description, steps) VALUES (?, ?, ?, ?)",
-      [userId, title, description, steps]
+      [userId, title, description, steps],
     );
 
     return res.status(201).json({
@@ -31,7 +33,9 @@ router.post("/", requireAuth, async (req, res) => {
       practiceId: result.insertId,
     });
   } catch (err) {
-    return res.status(500).json({ message: "Server error", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 });
 
@@ -57,7 +61,45 @@ router.get("/", async (req, res) => {
     const [rows] = await pool.query(sql, params);
     return res.json({ practices: rows });
   } catch (err) {
-    return res.status(500).json({ message: "Server error", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
+  }
+});
+
+// GET /api/practices/applied
+router.get("/applied", requireAuth, async (req, res) => {
+  const userId = req.user.userId;
+
+  try {
+    const [rows] = await pool.query(
+      `
+  SELECT 
+    ap.appliedId,
+    ap.status AS appliedStatus,
+    ap.appliedAt,
+    ap.reportedAt,
+
+    p.practiceId,
+    p.title,
+    p.description,
+    p.effectivenessScore,
+    p.confidenceLevel,
+    p.createdAt,
+
+    u.fullName AS authorName
+  FROM applied_practices ap
+  JOIN practices p ON p.practiceId = ap.practiceId
+  JOIN users u ON u.userId = p.userId
+  WHERE ap.userId = ?
+  ORDER BY ap.appliedAt DESC
+  `,
+      [userId],
+    );
+
+    res.json({ applied: rows });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
@@ -81,7 +123,7 @@ router.get("/:practiceId", async (req, res) => {
        FROM practices p
        JOIN users u ON u.userId = p.userId
        WHERE p.practiceId = ?`,
-      [practiceId]
+      [practiceId],
     );
 
     if (rows.length === 0) {
@@ -103,7 +145,7 @@ router.get("/:practiceId", async (req, res) => {
          SUM(CASE WHEN status='VALID' THEN 1 ELSE 0 END) AS validReports
        FROM outcomeReports
        WHERE practiceId = ?`,
-      [practiceId]
+      [practiceId],
     );
 
     const totalReports = Number(outcomeStats[0].totalReports || 0);
@@ -114,7 +156,7 @@ router.get("/:practiceId", async (req, res) => {
       `SELECT COUNT(*) AS visibleComments
        FROM comments
        WHERE practiceId = ? AND status='VISIBLE'`,
-      [practiceId]
+      [practiceId],
     );
 
     const visibleComments = Number(commentStats[0].visibleComments || 0);
@@ -142,7 +184,9 @@ router.get("/:practiceId", async (req, res) => {
       },
     });
   } catch (err) {
-    return res.status(500).json({ message: "Server error", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 });
 
@@ -158,7 +202,7 @@ router.post("/:id/apply", requireAuth, async (req, res) => {
     // 1. Check that practice exists
     const [practice] = await pool.query(
       "SELECT practiceId FROM practices WHERE practiceId = ? AND status = 'ACTIVE'",
-      [practiceId]
+      [practiceId],
     );
 
     if (practice.length === 0) {
@@ -168,29 +212,26 @@ router.post("/:id/apply", requireAuth, async (req, res) => {
     // 2. Apply practice
     await pool.query(
       "INSERT INTO applied_practices (userId, practiceId) VALUES (?, ?)",
-      [userId, practiceId]
+      [userId, practiceId],
     );
 
     return res.json({
       message: "Practice applied successfully",
-      practiceId
+      practiceId,
     });
-
   } catch (err) {
     // 3. User already applied
     if (err.code === "ER_DUP_ENTRY") {
       return res.status(409).json({
-        message: "You already applied this practice"
+        message: "You already applied this practice",
       });
     }
 
     return res.status(500).json({
       message: "Server error",
-      error: err.message
+      error: err.message,
     });
   }
 });
-
-
 
 module.exports = router;
