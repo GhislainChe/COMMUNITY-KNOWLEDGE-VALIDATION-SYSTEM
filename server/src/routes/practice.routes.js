@@ -103,6 +103,8 @@ router.get("/applied", requireAuth, async (req, res) => {
   }
 });
 
+
+
 /**
  * GET /api/practices/:practiceId
  * Public: returns a single practice detail + stats.
