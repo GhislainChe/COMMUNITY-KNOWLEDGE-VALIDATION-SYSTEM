@@ -146,5 +146,51 @@ router.get("/:practiceId", async (req, res) => {
   }
 });
 
+router.post("/:id/apply", requireAuth, async (req, res) => {
+  const userId = req.user.userId;
+
+  const practiceId = parseInt(req.params.id, 10);
+  if (Number.isNaN(practiceId)) {
+    return res.status(400).json({ message: "Invalid practice id" });
+  }
+
+  try {
+    // 1. Check that practice exists
+    const [practice] = await pool.query(
+      "SELECT practiceId FROM practices WHERE practiceId = ? AND status = 'ACTIVE'",
+      [practiceId]
+    );
+
+    if (practice.length === 0) {
+      return res.status(404).json({ message: "Practice not found" });
+    }
+
+    // 2. Apply practice
+    await pool.query(
+      "INSERT INTO applied_practices (userId, practiceId) VALUES (?, ?)",
+      [userId, practiceId]
+    );
+
+    return res.json({
+      message: "Practice applied successfully",
+      practiceId
+    });
+
+  } catch (err) {
+    // 3. User already applied
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        message: "You already applied this practice"
+      });
+    }
+
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message
+    });
+  }
+});
+
+
 
 module.exports = router;

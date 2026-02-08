@@ -49,6 +49,28 @@ router.post(
         return res.status(404).json({ message: "Practice not found" });
       }
 
+      // 1) Check if user has applied this practice
+      const userId = req.user.userId;
+
+      const [appliedRows] = await pool.query(
+        "SELECT appliedId, status FROM applied_practices WHERE userId = ? AND practiceId = ?",
+        [userId, practiceId],
+      );
+
+      if (appliedRows.length === 0) {
+        return res.status(403).json({
+          message:
+            "You must apply this practice before submitting an outcome report",
+        });
+      }
+
+      // (Optional) prevent reporting twice via applied table status
+      if (appliedRows[0].status === "REPORTED") {
+        return res.status(409).json({
+          message: "You have already submitted an outcome for this practice",
+        });
+      }
+
       if (practiceRows[0].status !== "ACTIVE") {
         return res.status(403).json({
           message: "This practice is not available for outcome reporting",
@@ -56,7 +78,7 @@ router.post(
       }
 
       // userId comes from the JWT (this prevents identity cheating)
-      const userId = req.user.userId;
+      // const userId = req.user.userId;
 
       const {
         outcomeType,
@@ -101,6 +123,12 @@ router.post(
           recommendation || null,
         ],
       );
+
+      await pool.query(
+  "UPDATE applied_practices SET status='REPORTED', reportedAt=NOW() WHERE userId=? AND practiceId=?",
+  [userId, practiceId]
+);
+
 
       // 4) Recalculate practice score using ALL outcome reports
       // Why? Each new report changes the average effectiveness.
