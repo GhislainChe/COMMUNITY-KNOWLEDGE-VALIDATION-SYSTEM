@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api/api";
 import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { X } from "lucide-react";
 
 
 // ✅ Put a default image in: clients/src/assets/practice-default.jpg
