@@ -1,17 +1,13 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api/api";
 import defaultPracticeImg from "../../assets/practice-default.jpg";
-import { Bookmark } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { MessageSquareText } from "lucide-react";
 
 export default function PracticeDetailsPage() {
   const navigate = useNavigate();
-
   const { id } = useParams();
-  const practiceId = Number(id);
 
+  const practiceId = Number(id);
 
   const [practice, setPractice] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,17 +20,16 @@ export default function PracticeDetailsPage() {
   const [isApplied, setIsApplied] = useState(false);
 
   // Placeholder stats (we will connect later)
-  const statValues = {
-    totalReports: stats?.totalReports ?? 0,
-    effective: stats?.effective ?? 0,
-    partial: stats?.partial ?? 0,
-    ineffective: stats?.ineffective ?? 0,
-    recommendedRate: stats?.recommendedRate ?? 0,
-  };
-
-  // useEffect(() => {
-  //   console.log("PRACTICE DATA:", practice);
-  // }, [practice]);
+  const statValues = useMemo(
+    () => ({
+      totalReports: stats?.totalReports ?? 0,
+      effective: stats?.effective ?? 0,
+      partial: stats?.partial ?? 0,
+      ineffective: stats?.ineffective ?? 0,
+      recommendedRate: stats?.recommendedRate ?? 0,
+    }),
+    [stats]
+  );
 
   useEffect(() => {
     async function fetchDetails() {
@@ -42,13 +37,34 @@ export default function PracticeDetailsPage() {
         setLoading(true);
         setError("");
 
-        const res = await api.get(`/practices/${id}`);
+        if (!Number.isInteger(practiceId) || practiceId <= 0) {
+          setError("Invalid practice id");
+          return;
+        }
 
-        // Backend might return { practice: {...} } or just {...}
+        // 1) Load practice
+        const res = await api.get(`/practices/${practiceId}`);
         const data = res.data?.practice ? res.data.practice : res.data;
-        const statsRes = await api.get(`/practices/${id}/stats`);
-        setStats(statsRes.data);
         setPractice(data);
+
+        // 2) Load stats
+        const statsRes = await api.get(`/practices/${practiceId}/stats`);
+        setStats(statsRes.data);
+
+        // 3) Check if THIS practice is already applied by current user
+        //    (Uses your existing endpoint: GET /api/practices/applied)
+        const appliedRes = await api.get(`/practices/applied`);
+        const appliedList = Array.isArray(appliedRes.data)
+          ? appliedRes.data
+          : appliedRes.data?.applied || appliedRes.data?.practices || [];
+
+        const alreadyApplied = appliedList.some((p) => {
+          const pid =
+            Number(p.practiceId ?? p.id ?? p.practice_id ?? p.practiceID);
+          return pid === practiceId;
+        });
+
+        setIsApplied(alreadyApplied);
       } catch (err) {
         setError(err?.response?.data?.message || "Failed to load practice");
       } finally {
@@ -57,14 +73,14 @@ export default function PracticeDetailsPage() {
     }
 
     fetchDetails();
-  }, [id]);
+  }, [practiceId]);
 
   async function handleApply() {
     try {
       setApplyLoading(true);
       setApplyMsg("");
 
-      await api.post(`/practices/${id}/apply`);
+      await api.post(`/practices/${practiceId}/apply`);
       setIsApplied(true);
       setApplyMsg("Saved to Bookmarks.");
     } catch (err) {
@@ -90,13 +106,12 @@ export default function PracticeDetailsPage() {
       {/* Page container */}
       <div className="rounded-3xl border border-slate-200 bg-white p-2 sm:p-4 md:p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
         {/* HERO CARD */}
-        {/* HERO CARD */}
         <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10">
           {/* Background image */}
           <div
             className="min-h-[240px] sm:min-h-[300px] md:min-h-[360px] bg-cover bg-center"
             style={{
-              backgroundImage: `url(${practice?.imageUrl || defaultPracticeImg})`,
+              backgroundImage: `url(${imgSrc})`,
             }}
           />
 
@@ -136,13 +151,38 @@ export default function PracticeDetailsPage() {
 
             {/* Buttons row */}
             <div className="mt-4 flex flex-row gap-2 sm:flex-row sm:items-center">
-              <button
-                onClick={handleApply}
-                className="rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-100 sm:w-auto"
-              >
-                Apply practice
-              </button>
+              {/* Apply / Applied */}
+              {!isApplied ? (
+                <button
+                  onClick={handleApply}
+                  disabled={applyLoading}
+                  className="rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-100 disabled:opacity-60 sm:w-auto"
+                >
+                  {applyLoading ? "Applying..." : "Apply practice"}
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="rounded-2xl bg-white/20 px-3 py-2 text-sm font-semibold text-white backdrop-blur sm:w-auto"
+                  title="Already applied"
+                >
+                  Applied ✔
+                </button>
+              )}
 
+              {/* Submit outcome (only if applied) */}
+              {isApplied && (
+                <button
+                  onClick={() =>
+                    navigate(`/app/practices?submitOutcomeFor=${practiceId}`)
+                  }
+                  className="rounded-2xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 sm:w-auto"
+                >
+                  Submit outcome
+                </button>
+              )}
+
+              {/* Comments -> discussions for this practice */}
               <button
                 onClick={() =>
                   navigate(`/app/discussions?practiceId=${practiceId}`)
@@ -152,10 +192,15 @@ export default function PracticeDetailsPage() {
                 Comments
               </button>
             </div>
+
+            {/* Apply message */}
+            {applyMsg && (
+              <p className="mt-2 text-left text-xs text-white/80">{applyMsg}</p>
+            )}
           </div>
         </div>
 
-        {/* META CHIPS (moved OUTSIDE hero so it’s not crowded) */}
+        {/* META CHIPS (placeholders for later DB tables) */}
         <div className="mt-4 flex flex-wrap gap-2">
           {[
             { label: "Crop", value: practice?.cropType || "--" },
@@ -179,11 +224,11 @@ export default function PracticeDetailsPage() {
         {/* STATS */}
         <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-3">
           {[
-            { label: "Reports", value: stats?.totalReports ?? 0 },
-            { label: "Effective", value: stats?.effective ?? 0 },
-            { label: "Partial", value: stats?.partial ?? 0 },
-            { label: "Ineffective", value: stats?.ineffective ?? 0 },
-            { label: "Recommended", value: `${stats?.recommendedRate ?? 0}%` },
+            { label: "Reports", value: statValues.totalReports },
+            { label: "Effective", value: statValues.effective },
+            { label: "Partial", value: statValues.partial },
+            { label: "Ineffective", value: statValues.ineffective },
+            { label: "Recommended", value: `${statValues.recommendedRate}%` },
             { label: "Confidence", value: practice?.confidenceLevel || "LOW" },
           ].map((s) => (
             <div
@@ -226,34 +271,6 @@ export default function PracticeDetailsPage() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value }) {
-  return (
-    <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-      <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
-        {label}
-      </p>
-      <p className="mt-1 font-heading text-xl font-bold">{value}</p>
-    </div>
-  );
-}
-
-function FeedbackItem({ text }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
-      {text}
-    </div>
-  );
-}
-
-function ContextPill({ label, value }) {
-  return (
-    <div className="rounded-2xl bg-black/35 px-3 py-2">
-      <p className="text-[10px] font-semibold text-white/70">{label}</p>
-      <p className="text-[12px] font-semibold text-white">{value}</p>
     </div>
   );
 }
