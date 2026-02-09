@@ -45,13 +45,10 @@ export default function PracticesPage() {
   }
 
   return (
-    <div className="text-slate-900 dark:text-slate-100">
-      <div className="flex items-end justify-between gap-4" >
+    <div className="text-slate-900 dark:text-slate-100 p-3">
+      <div className="flex items-end justify-between gap-4 m-1" >
         <div>
           <h1 className="font-heading text-2xl font-semibold">Practices</h1>
-          <p className="mt-1 text-slate-600 dark:text-slate-300/70">
-            Community-submitted agricultural practices, ranked by outcomes.
-          </p>
         </div>
 
         {/* Placeholder button for later (Create Practice) */}

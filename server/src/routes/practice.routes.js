@@ -103,6 +103,56 @@ router.get("/applied", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/:id/stats", requireAuth, async (req, res) => {
+  const practiceId = parseInt(req.params.id, 10);
+  if (!Number.isInteger(practiceId) || practiceId <= 0) {
+    return res.status(400).json({ message: "Invalid practice id" });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT
+        COUNT(*) AS totalReports,
+
+        SUM(CASE WHEN outcomeType = 'EFFECTIVE' THEN 1 ELSE 0 END) AS effective,
+        SUM(CASE WHEN outcomeType = 'PARTIAL' THEN 1 ELSE 0 END) AS partial,
+        SUM(CASE WHEN outcomeType = 'INEFFECTIVE' THEN 1 ELSE 0 END) AS ineffective,
+
+        SUM(CASE WHEN recommendation = 'YES' THEN 1 ELSE 0 END) AS yesCount,
+        SUM(CASE WHEN recommendation = 'NO' THEN 1 ELSE 0 END) AS noCount,
+        SUM(CASE WHEN recommendation = 'MAYBE' THEN 1 ELSE 0 END) AS maybeCount,
+
+        SUM(CASE WHEN recommendation IS NOT NULL THEN 1 ELSE 0 END) AS totalRecommendationAnswered
+      FROM outcomeReports
+      WHERE practiceId = ? AND status = 'VALID'
+      `,
+      [practiceId]
+    );
+
+    const s = rows[0] || {};
+    const answered = Number(s.totalRecommendationAnswered || 0);
+    const yes = Number(s.yesCount || 0);
+
+    const recommendedRate = answered === 0 ? 0 : Math.round((yes / answered) * 100);
+
+    return res.json({
+      totalReports: Number(s.totalReports || 0),
+      effective: Number(s.effective || 0),
+      partial: Number(s.partial || 0),
+      ineffective: Number(s.ineffective || 0),
+
+      yesCount: Number(s.yesCount || 0),
+      noCount: Number(s.noCount || 0),
+      maybeCount: Number(s.maybeCount || 0),
+
+      recommendedRate,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 
 
 /**

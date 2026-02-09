@@ -14,6 +14,7 @@ export default function PracticeDetailsPage() {
   const [practice, setPractice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [stats, setStats] = useState(null);
 
   // Apply states (button)
   const [applyLoading, setApplyLoading] = useState(false);
@@ -21,17 +22,17 @@ export default function PracticeDetailsPage() {
   const [isApplied, setIsApplied] = useState(false);
 
   // Placeholder stats (we will connect later)
-  const stats = {
-    totalReports: practice?.reportsCount ?? 0,
-    effective: practice?.effectiveCount ?? 0,
-    partial: practice?.partialCount ?? 0,
-    ineffective: practice?.ineffectiveCount ?? 0,
-    recommendedRate: practice?.recommendedRate ?? 0,
+  const statValues = {
+    totalReports: stats?.totalReports ?? 0,
+    effective: stats?.effective ?? 0,
+    partial: stats?.partial ?? 0,
+    ineffective: stats?.ineffective ?? 0,
+    recommendedRate: stats?.recommendedRate ?? 0,
   };
 
-  useEffect(() => {
-    console.log("PRACTICE DATA:", practice);
-  }, [practice]);
+  // useEffect(() => {
+  //   console.log("PRACTICE DATA:", practice);
+  // }, [practice]);
 
   useEffect(() => {
     async function fetchDetails() {
@@ -43,6 +44,8 @@ export default function PracticeDetailsPage() {
 
         // Backend might return { practice: {...} } or just {...}
         const data = res.data?.practice ? res.data.practice : res.data;
+        const statsRes = await api.get(`/practices/${id}/stats`);
+        setStats(statsRes.data);
         setPractice(data);
       } catch (err) {
         setError(err?.response?.data?.message || "Failed to load practice");
@@ -81,156 +84,144 @@ export default function PracticeDetailsPage() {
   const imgSrc = practice.imageUrl || defaultPracticeImg;
 
   return (
-    <div className="space-y-6">
-      {/* HERO */}
-      <div className="relative overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
-        <div className="relative h-[320px]">
-          <img
-            src={imgSrc}
-            alt={practice.title}
-            className="absolute inset-0 h-full w-full object-cover"
+    <div className="mx-auto w-full max-w-1xl p-0 sm:p-4 md:p-6">
+      {/* Page container */}
+      <div className="rounded-3xl border border-slate-200 bg-white p-2 sm:p-4 md:p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+        {/* HERO CARD */}
+        {/* HERO CARD */}
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10">
+          {/* Background image */}
+          <div
+            className="min-h-[240px] sm:min-h-[300px] md:min-h-[360px] bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${practice?.imageUrl || defaultPracticeImg})`,
+            }}
           />
 
-          {/* gradient overlay like your cards */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/35 to-black/85" />
+          {/* Overlay: darker bottom, clearer top */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
 
-          {/* content */}
-          <div className="absolute inset-x-0 bottom-0 p-5 text-left">
-            <p className="text-xs font-semibold text-white/80">
-              by {practice.author?.fullName || "Community member"}
-            </p>
+          {/* Content */}
+          <div className="absolute inset-0 flex flex-col justify-end p-3 sm:p-6">
+            {/* Author pill */}
+            <div className="mb-2">
+              <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur">
+                by {practice?.author?.fullName || "Community member"}
+              </span>
+            </div>
 
-            <h1 className="mt-1 font-heading text-[26px] font-extrabold leading-tight text-white">
-              {practice.title}
+            {/* Title */}
+            <h1 className="text-left text-xl font-extrabold leading-tight text-white sm:text-2xl md:text-3xl">
+              {practice?.title || "Practice title"}
             </h1>
 
-            <p className="mt-2 max-w-2xl text-[13px] leading-snug text-white/85">
-              {practice.description || "No description provided."}
+            {/* Description */}
+            <p className="mt-1 max-w-xl text-left text-sm text-white/85 sm:text-[15px]">
+              {practice?.description ||
+                "Community practice shared with full context and steps."}
             </p>
-            {/* Context placeholders (ready for backend later) */}
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <ContextPill label="Crop" value={practice.cropType || "—"} />
-              <ContextPill
-                label="Problem"
-                value={practice.problemType || "—"}
-              />
-              <ContextPill label="Season" value={practice.season || "—"} />
-              <ContextPill label="Location" value={practice.location || "—"} />
-            </div>
 
-            {/* tags */}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {practice.cropType && (
-                <span className="rounded-full bg-black/40 px-3 py-1 text-[11px] font-semibold text-white">
-                  {practice.cropType}
-                </span>
-              )}
-              {practice.location && (
-                <span className="rounded-full bg-black/40 px-3 py-1 text-[11px] font-semibold text-white">
-                  {practice.location}
-                </span>
-              )}
-              {practice.season && (
-                <span className="rounded-full bg-black/40 px-3 py-1 text-[11px] font-semibold text-white">
-                  {practice.season}
-                </span>
-              )}
-
-              <span className="rounded-full bg-emerald-600/45 px-3 py-1 text-[11px] font-semibold text-emerald-50">
-                {practice.confidenceLevel || "LOW"}
-              </span>
-
-              <span className="rounded-full bg-black/40 px-3 py-1 text-[11px] font-semibold text-white">
-                Score: {practice.effectivenessScore ?? "—"}
+            <div className="sm:ml-auto text-left mt-3 text-xs text-white/80">
+              Score:{" "}
+              <span className="font-bold text-white">
+                {practice?.effectivenessScore ?? "0.00"}
+              </span>{" "}
+              • Confidence:{" "}
+              <span className="font-bold text-white">
+                {practice?.confidenceLevel || "LOW"}
               </span>
             </div>
 
-            {/* actions */}
-            <div className="mt-4 flex flex-wrap items-center gap-3">
+            {/* Buttons row */}
+            <div className="mt-4 flex flex-row gap-2 sm:flex-row sm:items-center">
               <button
-                type="button"
                 onClick={handleApply}
-                disabled={applyLoading || isApplied}
-                className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13px] font-semibold shadow-sm transition
-                  ${
-                    isApplied
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200"
-                      : "bg-white text-slate-900 hover:bg-slate-100"
-                  }
-                  ${applyLoading ? "opacity-70" : ""}
-                `}
+                className="rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-100 sm:w-auto"
               >
-                <Bookmark className="h-4 w-4" />
-                {isApplied
-                  ? "Applied ✓"
-                  : applyLoading
-                    ? "Applying..."
-                    : "Apply practice"}
+                Apply practice
               </button>
+
               <button
-                type="button"
-                onClick={() => navigate(`/app/discussions?practiceId=${id}`)}
-                className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13px] font-semibold
-             bg-white/15 text-white hover:bg-white/20 transition"
+                onClick={() =>
+                  navigate(`/app/discussions?practiceId=${practiceId}`)
+                }
+                className="rounded-2xl bg-white/15 px-3 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20 sm:w-auto"
               >
-                <MessageSquareText className="h-4 w-4" />
                 Comments
               </button>
-
-              {applyMsg && (
-                <span className="text-[12px] font-medium text-white/85">
-                  {applyMsg}
-                </span>
-              )}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* STATS ROW (placeholders until backend provides real counts) */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Reports" value={stats.totalReports} />
-        <StatCard label="Effective" value={stats.effective} />
-        <StatCard label="Partial" value={stats.partial} />
-        <StatCard label="Ineffective" value={stats.ineffective} />
-        <StatCard label="Recommended" value={`${stats.recommendedRate}%`} />
-      </div>
-
-      {/* OVERVIEW */}
-      <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <h2 className="font-heading text-lg font-semibold">Overview</h2>
-
-        <div className="mt-4 space-y-4">
-          <div>
-            <p className="text-sm font-semibold">Description</p>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/80">
-              {practice.description || "No description provided."}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm font-semibold">Steps</p>
-            <p className="mt-1 whitespace-pre-line text-sm text-slate-600 dark:text-slate-300/80">
-              {practice.steps || "No steps provided."}
-            </p>
-          </div>
+        {/* META CHIPS (moved OUTSIDE hero so it’s not crowded) */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[
+            { label: "Crop", value: practice?.cropType || "--" },
+            { label: "Problem", value: practice?.problemType || "--" },
+            { label: "Season", value: practice?.season || "--" },
+            { label: "Location", value: practice?.location || "--" },
+          ].map((item) => (
+            <span
+              key={item.label}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm
+                 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+            >
+              <span className="text-slate-500 dark:text-slate-300/70">
+                {item.label}:
+              </span>
+              <span>{item.value}</span>
+            </span>
+          ))}
         </div>
-      </div>
 
-      {/* COMMUNITY FEEDBACK (we will connect later) */}
-      <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <h2 className="font-heading text-lg font-semibold">
-          Community feedback
-        </h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-          Short anonymized comments from outcome reports.
-        </p>
+        {/* STATS */}
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-3">
+          {[
+            { label: "Reports", value: stats?.totalReports ?? 0 },
+            { label: "Effective", value: stats?.effective ?? 0 },
+            { label: "Partial", value: stats?.partial ?? 0 },
+            { label: "Ineffective", value: stats?.ineffective ?? 0 },
+            { label: "Recommended", value: `${stats?.recommendedRate ?? 0}%` },
+            { label: "Confidence", value: practice?.confidenceLevel || "LOW" },
+          ].map((s) => (
+            <div
+              key={s.label}
+              className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-4"
+            >
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
+                {s.label}
+              </p>
+              <p className="mt-1 text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
+                {s.value}
+              </p>
+            </div>
+          ))}
+        </div>
 
-        {/* Placeholder list */}
-        <div className="mt-4 space-y-3">
-          <FeedbackItem text="Worked after one week. Reduced pests." />
-          <FeedbackItem text="Partially effective. Needed extra watering." />
-          <FeedbackItem text="Did not work in my case during heavy rains." />
+        {/* OVERVIEW */}
+        <div className="mt-5 space-y-4 p-3 sm:mt-7">
+          <div>
+            <h2 className="text-base font-bold sm:text-lg">Overview</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300/80">
+              {practice?.overview || "Overview content will appear here."}
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold sm:text-base">
+              Steps / How to do it
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300/80">
+              {practice?.steps || "Steps content will appear here."}
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold sm:text-base">Materials needed</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300/80">
+              {practice?.materials || "Materials content will appear here."}
+            </p>
+          </div>
         </div>
       </div>
     </div>
