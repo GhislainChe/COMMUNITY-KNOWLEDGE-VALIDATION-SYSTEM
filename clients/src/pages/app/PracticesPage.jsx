@@ -36,17 +36,16 @@ export default function PracticesPage() {
   // }, [openPracticeId]);
 
   useEffect(() => {
-  if (!openPracticeId) return;
+    if (!openPracticeId) return;
 
-  setOutcomeType("EFFECTIVE");
-  setSimilarContext("Y");
-  setComment("");
-  setDurationDays("");
-  setRecommendation("YES");
-  setSubmitErr("");
-  setSubmitMsg("");
-}, [openPracticeId]);
-
+    setOutcomeType("EFFECTIVE");
+    setSimilarContext("Y");
+    setComment("");
+    setDurationDays("");
+    setRecommendation("YES");
+    setSubmitErr("");
+    setSubmitMsg("");
+  }, [openPracticeId]);
 
   useEffect(() => {
     async function fetchPractices() {
@@ -80,47 +79,53 @@ export default function PracticesPage() {
   }
 
   async function submitOutcome(e) {
-  e.preventDefault();
-  setSubmitErr("");
-  setSubmitMsg("");
+    e.preventDefault();
+    setSubmitErr("");
+    setSubmitMsg("");
 
-  if (!comment.trim()) {
-    setSubmitErr("Please enter a short outcome comment.");
-    return;
+    if (!comment.trim()) {
+      setSubmitErr("Please enter a short outcome comment.");
+      return;
+    }
+    if (!durationDays || Number(durationDays) <= 0) {
+      setSubmitErr("Please enter a valid number of days.");
+      return;
+    }
+
+    try {
+      setSubmitLoading(true);
+
+      const payload = {
+        outcomeType,
+        similarContext, // must be "Y" or "N"
+        comment: comment.trim(),
+        durationDays: Number(durationDays),
+        recommendation, // YES/NO/MAYBE
+      };
+
+      await api.post(`/practices/${openPracticeId}/outcomes`, payload);
+
+      setSubmitMsg("Outcome submitted successfully ✅");
+      const from = searchParams.get("from");
+      if (from === "bookmarks") {
+        // close modal + go back to bookmarks
+        setTimeout(() => {
+          closeOutcomeModal();
+          navigate("/app/bookmarks", { replace: true });
+        }, 600);
+        return;
+      }
+
+      // Close after short moment
+      setTimeout(() => {
+        closeOutcomeModal();
+      }, 750);
+    } catch (err) {
+      setSubmitErr(err?.response?.data?.message || "Failed to submit outcome.");
+    } finally {
+      setSubmitLoading(false);
+    }
   }
-  if (!durationDays || Number(durationDays) <= 0) {
-    setSubmitErr("Please enter a valid number of days.");
-    return;
-  }
-
-  try {
-    setSubmitLoading(true);
-
-    const payload = {
-      outcomeType,
-      similarContext, // must be "Y" or "N"
-      comment: comment.trim(),
-      durationDays: Number(durationDays),
-      recommendation, // YES/NO/MAYBE
-    };
-
-    await api.post(`/practices/${openPracticeId}/outcomes`, payload);
-
-    setSubmitMsg("Outcome submitted successfully ✅");
-
-    // Close after short moment
-    setTimeout(() => {
-      closeOutcomeModal();
-    }, 600);
-  } catch (err) {
-    setSubmitErr(
-      err?.response?.data?.message || "Failed to submit outcome."
-    );
-  } finally {
-    setSubmitLoading(false);
-  }
-}
-
 
   if (loading) {
     return <p className="text-slate-500">Loading practices...</p>;
@@ -258,119 +263,118 @@ export default function PracticesPage() {
             </div>
 
             <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
-             {/* Messages */}
-{submitErr && (
-  <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
-    {submitErr}
-  </div>
-)}
-{submitMsg && (
-  <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
-    {submitMsg}
-  </div>
-)}
+              {/* Messages */}
+              {submitErr && (
+                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+                  {submitErr}
+                </div>
+              )}
+              {submitMsg && (
+                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
+                  {submitMsg}
+                </div>
+              )}
 
-<form onSubmit={submitOutcome} className="mt-4 space-y-4">
-  <div className="grid gap-3 sm:grid-cols-2">
-    <div>
-      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-        Outcome type
-      </label>
-      <select
-        value={outcomeType}
-        onChange={(e) => setOutcomeType(e.target.value)}
-        className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+              <form onSubmit={submitOutcome} className="mt-4 space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                      Outcome type
+                    </label>
+                    <select
+                      value={outcomeType}
+                      onChange={(e) => setOutcomeType(e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-      >
-        <option value="EFFECTIVE">Effective</option>
-        <option value="PARTIAL">Partially effective</option>
-        <option value="INEFFECTIVE">Ineffective</option>
-      </select>
-    </div>
+                    >
+                      <option value="EFFECTIVE">Effective</option>
+                      <option value="PARTIAL">Partially effective</option>
+                      <option value="INEFFECTIVE">Ineffective</option>
+                    </select>
+                  </div>
 
-    <div>
-      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-        Similar context?
-      </label>
-      <select
-        value={similarContext}
-        onChange={(e) => setSimilarContext(e.target.value)}
-        className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                      Similar context?
+                    </label>
+                    <select
+                      value={similarContext}
+                      onChange={(e) => setSimilarContext(e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-      >
-        <option value="Y">Yes (similar)</option>
-        <option value="N">No (different)</option>
-      </select>
-    </div>
-  </div>
+                    >
+                      <option value="Y">Yes (similar)</option>
+                      <option value="N">No (different)</option>
+                    </select>
+                  </div>
+                </div>
 
-  <div className="grid gap-3 sm:grid-cols-2">
-    <div>
-      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-        Days before reporting
-      </label>
-      <input
-        type="number"
-        min="1"
-        value={durationDays}
-        onChange={(e) => setDurationDays(e.target.value)}
-        className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                      Days before reporting
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={durationDays}
+                      onChange={(e) => setDurationDays(e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-        placeholder="e.g. 7"
-      />
-    </div>
+                      placeholder="e.g. 7"
+                    />
+                  </div>
 
-    <div>
-      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-        Recommendation
-      </label>
-      <select
-        value={recommendation}
-        onChange={(e) => setRecommendation(e.target.value)}
-        className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                      Recommendation
+                    </label>
+                    <select
+                      value={recommendation}
+                      onChange={(e) => setRecommendation(e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-      >
-        <option value="YES">Yes</option>
-        <option value="NO">No</option>
-        <option value="MAYBE">Maybe</option>
-      </select>
-    </div>
-  </div>
+                    >
+                      <option value="YES">Yes</option>
+                      <option value="NO">No</option>
+                      <option value="MAYBE">Maybe</option>
+                    </select>
+                  </div>
+                </div>
 
-  <div>
-    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-      Short outcome comment
-    </label>
-    <textarea
-      value={comment}
-      onChange={(e) => setComment(e.target.value)}
-      rows={4}
-      className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Short outcome comment
+                  </label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={4}
+                    className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                  focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-      placeholder="What happened after you applied the practice?"
-    />
-  </div>
+                    placeholder="What happened after you applied the practice?"
+                  />
+                </div>
 
-  <div className="flex items-center justify-end gap-2">
-    <button
-      type="button"
-      onClick={closeOutcomeModal}
-      className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={closeOutcomeModal}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
                  dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-    >
-      Cancel
-    </button>
+                  >
+                    Cancel
+                  </button>
 
-    <button
-      type="submit"
-      disabled={submitLoading}
-      className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
-    >
-      {submitLoading ? "Submitting..." : "Submit"}
-    </button>
-  </div>
-</form>
-
+                  <button
+                    type="submit"
+                    disabled={submitLoading}
+                    className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
+                  >
+                    {submitLoading ? "Submitting..." : "Submit"}
+                  </button>
+                </div>
+              </form>
             </div>
 
             <div className="mt-4 flex justify-end">
