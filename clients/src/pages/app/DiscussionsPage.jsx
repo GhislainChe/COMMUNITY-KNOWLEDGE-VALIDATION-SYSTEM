@@ -25,14 +25,29 @@ export default function DiscussionsPage() {
   const [loadingList, setLoadingList] = useState(false);
   const [errorList, setErrorList] = useState("");
 
+  // Composer (input)
+  const [message, setMessage] = useState("");
+  const [sendLoading, setSendLoading] = useState(false);
+  const [sendError, setSendError] = useState("");
+
   // Auto-scroll to bottom
   const bottomRef = useRef(null);
+  const scrollToBottom = (behavior = "smooth") =>
+    bottomRef.current?.scrollIntoView({ behavior });
+
   useEffect(() => {
     if (!practiceId) return;
-    // small delay so DOM renders first
-    const t = setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
+    const t = setTimeout(() => scrollToBottom("auto"), 80);
     return () => clearTimeout(t);
-  }, [practiceId, comments.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [practiceId]);
+
+  useEffect(() => {
+    if (!practiceId) return;
+    const t = setTimeout(() => scrollToBottom("smooth"), 80);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comments.length]);
 
   // Fetch: thread (chat)
   useEffect(() => {
@@ -45,7 +60,9 @@ export default function DiscussionsPage() {
 
         // 1) Practice header info
         const practiceRes = await api.get(`/practices/${practiceId}`);
-        const p = practiceRes.data?.practice ? practiceRes.data.practice : practiceRes.data;
+        const p = practiceRes.data?.practice
+          ? practiceRes.data.practice
+          : practiceRes.data;
 
         setPracticeInfo({
           title: p?.title || "Practice discussion",
@@ -54,9 +71,6 @@ export default function DiscussionsPage() {
 
         // 2) Comments
         const res = await api.get(`/practices/${practiceId}/comments`);
-
-        // IMPORTANT: your backend returns: { practiceId, comments: [...] } (tree or flat)
-        // We'll safely extract either a flat array or a tree and flatten it.
         const raw = res.data;
 
         let data =
@@ -69,11 +83,12 @@ export default function DiscussionsPage() {
 
         data = Array.isArray(data) ? data : [];
 
-        // If the backend returns tree structure with replies, flatten it for chat display
         const flattened = flattenCommentsForChat(data);
         setComments(flattened);
       } catch (err) {
-        setErrorThread(err?.response?.data?.message || "Failed to load discussion");
+        setErrorThread(
+          err?.response?.data?.message || "Failed to load discussion"
+        );
       } finally {
         setLoadingThread(false);
       }
@@ -91,8 +106,6 @@ export default function DiscussionsPage() {
         setLoadingList(true);
         setErrorList("");
 
-        // You said later you want: list of discussions of practices user commented in.
-        // This endpoint likely doesn't exist yet.
         const res = await api.get(`/discussions/mine`);
         const raw = res.data;
 
@@ -117,6 +130,78 @@ export default function DiscussionsPage() {
     loadList();
   }, [practiceId]);
 
+  async function handleSend() {
+    if (!practiceId) return;
+
+    const text = message.trim();
+    if (!text) return;
+
+    if (text.length > 500) {
+      setSendError("Message must be 500 characters or less.");
+      return;
+    }
+
+    setSendError("");
+
+    // Optimistic message (shows instantly)
+    const tempId = `temp-${Date.now()}`;
+    const optimistic = {
+      commentId: tempId,
+      userId: user?.userId,
+      parentCommentId: null,
+      content: text,
+      createdAt: new Date().toISOString(),
+      authorName: "You",
+      _optimistic: true,
+    };
+
+    setComments((prev) => [...prev, optimistic]);
+    setMessage("");
+
+    try {
+      setSendLoading(true);
+
+      const res = await api.post(`/practices/${practiceId}/comments`, {
+        content: text,
+      });
+
+      // Replace temp message with real commentId if returned
+      const realId = res.data?.commentId;
+
+      if (realId) {
+        setComments((prev) =>
+          prev.map((c) =>
+            c.commentId === tempId ? { ...c, commentId: realId, _optimistic: false } : c
+          )
+        );
+      } else {
+        // If backend doesn't return id, just mark optimistic false
+        setComments((prev) =>
+          prev.map((c) =>
+            c.commentId === tempId ? { ...c, _optimistic: false } : c
+          )
+        );
+      }
+    } catch (err) {
+      // Remove optimistic message on failure
+      setComments((prev) => prev.filter((c) => c.commentId !== tempId));
+
+      setSendError(
+        err?.response?.data?.message || "Failed to send message."
+      );
+    } finally {
+      setSendLoading(false);
+    }
+  }
+
+  function onKeyDown(e) {
+    // Enter sends, Shift+Enter new line
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }
+
   // ===== UI =====
 
   // List mode (no practiceId)
@@ -129,7 +214,9 @@ export default function DiscussionsPage() {
         </p>
 
         <div className="mt-6">
-          {loadingList && <p className="text-slate-500">Loading discussions...</p>}
+          {loadingList && (
+            <p className="text-slate-500">Loading discussions...</p>
+          )}
           {errorList && (
             <div className="rounded-2xl border border-slate-200 bg-white p-5 text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
               {errorList}
@@ -144,8 +231,6 @@ export default function DiscussionsPage() {
               You haven’t commented on any practice yet.
             </div>
           )}
-
-          {/* When backend endpoint exists, we’ll render thread list here */}
         </div>
       </div>
     );
@@ -184,9 +269,6 @@ export default function DiscussionsPage() {
         <div className="space-y-3">
           {comments.map((c) => {
             const isMine = Number(c.userId) === Number(user?.userId);
-
-            // Backend currently doesn't return authorName.
-            // We'll show a safe fallback label.
             const displayName =
               c.authorName ||
               (isMine ? "You" : `User ${c.userId ?? ""}`) ||
@@ -197,8 +279,7 @@ export default function DiscussionsPage() {
                 key={c.commentId}
                 className={`flex ${isMine ? "justify-end" : "justify-start"}`}
               >
-                <div className={`max-w-[85%] sm:max-w-[70%]`}>
-                  {/* Name above (only for others) */}
+                <div className="max-w-[85%] sm:max-w-[70%]">
                   {!isMine && (
                     <p className="mb-1 pl-1 text-[11px] font-semibold text-slate-500 dark:text-slate-300/70">
                       {displayName}
@@ -211,15 +292,16 @@ export default function DiscussionsPage() {
                       isMine
                         ? "rounded-br-md bg-emerald-600 text-white"
                         : "rounded-bl-md bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-slate-100",
+                      c._optimistic ? "opacity-80" : "",
                     ].join(" ")}
                   >
-                    <p className="whitespace-pre-wrap leading-relaxed">{c.content}</p>
+                    <p className="whitespace-pre-wrap leading-relaxed">
+                      {c.content}
+                    </p>
 
                     <div className="mt-2 flex items-center justify-end gap-2">
                       {c.parentCommentId ? (
-                        <span className="text-[10px] opacity-70">
-                          Reply
-                        </span>
+                        <span className="text-[10px] opacity-70">Reply</span>
                       ) : null}
                       <span className="text-[10px] opacity-70">
                         {formatTime(c.createdAt)}
@@ -235,9 +317,32 @@ export default function DiscussionsPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Placeholder for input box (we add next) */}
-      <div className="mt-3 rounded-2xl border border-dashed border-slate-200 bg-white/60 p-3 text-xs text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300/70">
-        Next step: add message input + send (POST comment).
+      {/* Composer */}
+      <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
+        {sendError && (
+          <p className="mb-2 text-sm text-red-600">{sendError}</p>
+        )}
+
+        <div className="flex items-end gap-2">
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={onKeyDown}
+            rows={2}
+            placeholder="Write a message… (Enter to send, Shift+Enter for new line)"
+            className="min-h-[44px] w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                       focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+          />
+
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={sendLoading || !message.trim()}
+            className="h-[44px] rounded-2xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {sendLoading ? "Sending..." : "Send"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -248,8 +353,9 @@ export default function DiscussionsPage() {
  * flatten it in chronological order for chat rendering.
  */
 function flattenCommentsForChat(items) {
-  // already flat?
-  const hasReplies = items.some((x) => Array.isArray(x?.replies) && x.replies.length > 0);
+  const hasReplies = items.some(
+    (x) => Array.isArray(x?.replies) && x.replies.length > 0
+  );
   if (!hasReplies) return items;
 
   const out = [];
@@ -261,14 +367,13 @@ function flattenCommentsForChat(items) {
         parentCommentId: node.parentCommentId ?? null,
         content: node.content,
         createdAt: node.createdAt,
-        authorName: node.authorName, // may be undefined
+        authorName: node.authorName,
       });
       if (node.replies?.length) walk(node.replies);
     }
   };
   walk(items);
 
-  // ensure sorted by time (safest)
   out.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
   return out;
 }
@@ -276,8 +381,7 @@ function flattenCommentsForChat(items) {
 function formatTime(createdAt) {
   if (!createdAt) return "";
   try {
-    const d = new Date(createdAt);
-    return d.toLocaleString();
+    return new Date(createdAt).toLocaleString();
   } catch {
     return "";
   }
