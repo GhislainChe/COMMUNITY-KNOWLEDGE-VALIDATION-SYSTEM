@@ -30,6 +30,9 @@ export default function DiscussionsPage() {
   const [sendLoading, setSendLoading] = useState(false);
   const [sendError, setSendError] = useState("");
 
+  // Reply state
+  const [replyTo, setReplyTo] = useState(null); // { commentId, authorName, content }
+
   // Auto-scroll to bottom
   const bottomRef = useRef(null);
   const scrollToBottom = (behavior = "smooth") =>
@@ -106,6 +109,7 @@ export default function DiscussionsPage() {
         setLoadingList(true);
         setErrorList("");
 
+        // You can create this endpoint later
         const res = await api.get(`/discussions/mine`);
         const raw = res.data;
 
@@ -148,7 +152,7 @@ export default function DiscussionsPage() {
     const optimistic = {
       commentId: tempId,
       userId: user?.userId,
-      parentCommentId: null,
+      parentCommentId: replyTo ? replyTo.commentId : null,
       content: text,
       createdAt: new Date().toISOString(),
       authorName: "You",
@@ -161,9 +165,17 @@ export default function DiscussionsPage() {
     try {
       setSendLoading(true);
 
-      const res = await api.post(`/practices/${practiceId}/comments`, {
-        content: text,
-      });
+      let res;
+      if (replyTo) {
+        res = await api.post(
+          `/practices/${practiceId}/comments/${replyTo.commentId}/replies`,
+          { content: text }
+        );
+      } else {
+        res = await api.post(`/practices/${practiceId}/comments`, {
+          content: text,
+        });
+      }
 
       // Replace temp message with real commentId if returned
       const realId = res.data?.commentId;
@@ -171,24 +183,25 @@ export default function DiscussionsPage() {
       if (realId) {
         setComments((prev) =>
           prev.map((c) =>
-            c.commentId === tempId ? { ...c, commentId: realId, _optimistic: false } : c
+            c.commentId === tempId
+              ? { ...c, commentId: realId, _optimistic: false }
+              : c
           )
         );
       } else {
-        // If backend doesn't return id, just mark optimistic false
         setComments((prev) =>
           prev.map((c) =>
             c.commentId === tempId ? { ...c, _optimistic: false } : c
           )
         );
       }
+
+      setReplyTo(null);
     } catch (err) {
       // Remove optimistic message on failure
       setComments((prev) => prev.filter((c) => c.commentId !== tempId));
 
-      setSendError(
-        err?.response?.data?.message || "Failed to send message."
-      );
+      setSendError(err?.response?.data?.message || "Failed to send message.");
     } finally {
       setSendLoading(false);
     }
@@ -295,14 +308,36 @@ export default function DiscussionsPage() {
                       c._optimistic ? "opacity-80" : "",
                     ].join(" ")}
                   >
+                    {/* Reply indicator */}
+                    {c.parentCommentId ? (
+                      <div className="mb-2 inline-flex rounded-lg bg-black/10 px-2 py-1 text-[10px] font-semibold opacity-80 dark:bg-white/10">
+                        Reply
+                      </div>
+                    ) : null}
+
                     <p className="whitespace-pre-wrap leading-relaxed">
                       {c.content}
                     </p>
 
-                    <div className="mt-2 flex items-center justify-end gap-2">
-                      {c.parentCommentId ? (
-                        <span className="text-[10px] opacity-70">Reply</span>
-                      ) : null}
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      {!isMine ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReplyTo({
+                              commentId: c.commentId,
+                              authorName: displayName,
+                              content: c.content,
+                            })
+                          }
+                          className="text-[11px] font-semibold text-emerald-600 hover:underline"
+                        >
+                          Reply
+                        </button>
+                      ) : (
+                        <span />
+                      )}
+
                       <span className="text-[10px] opacity-70">
                         {formatTime(c.createdAt)}
                       </span>
@@ -323,13 +358,40 @@ export default function DiscussionsPage() {
           <p className="mb-2 text-sm text-red-600">{sendError}</p>
         )}
 
+        {/* Reply preview */}
+        {replyTo && (
+          <div className="mb-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs dark:border-emerald-800/40 dark:bg-emerald-950/30">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold text-emerald-700 dark:text-emerald-300">
+                  Replying to {replyTo.authorName}
+                </p>
+                <p className="mt-1 line-clamp-2 text-slate-600 dark:text-slate-300/70">
+                  {replyTo.content}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplyTo(null)}
+                className="text-xs font-semibold text-slate-500 hover:text-red-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-end gap-2">
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={onKeyDown}
             rows={2}
-            placeholder="Write a message… (Enter to send, Shift+Enter for new line)"
+            placeholder={
+              replyTo
+                ? "Write a reply… (Enter to send, Shift+Enter for new line)"
+                : "Write a message… (Enter to send, Shift+Enter for new line)"
+            }
             className="min-h-[44px] w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                        focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
           />
@@ -340,7 +402,7 @@ export default function DiscussionsPage() {
             disabled={sendLoading || !message.trim()}
             className="h-[44px] rounded-2xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
           >
-            {sendLoading ? "Sending..." : "Send"}
+            {sendLoading ? "Sending..." : replyTo ? "Reply" : "Send"}
           </button>
         </div>
       </div>
