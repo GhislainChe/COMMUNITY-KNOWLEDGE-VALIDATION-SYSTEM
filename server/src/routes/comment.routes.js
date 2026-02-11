@@ -118,6 +118,10 @@ router.post("/practices/:practiceId/comments/:commentId/replies", requireAuth, a
  *   ...
  * ]
  */
+/**
+ * GET /api/practices/:practiceId/comments
+ * Flat list (chat style), includes authorName
+ */
 router.get("/practices/:practiceId/comments", async (req, res) => {
   try {
     const practiceId = Number(req.params.practiceId);
@@ -125,36 +129,28 @@ router.get("/practices/:practiceId/comments", async (req, res) => {
       return res.status(400).json({ message: "Invalid practiceId" });
     }
 
-    // Get all visible comments for that practice
     const [rows] = await pool.query(
-      `SELECT commentId, userId, parentCommentId, content, createdAt
-       FROM comments
-       WHERE practiceId = ? AND status='VISIBLE'
-       ORDER BY createdAt ASC`,
+      `
+      SELECT 
+        c.commentId,
+        c.userId,
+        c.parentCommentId,
+        c.content,
+        c.createdAt,
+        u.fullName AS authorName
+      FROM comments c
+      JOIN users u ON u.userId = c.userId
+      WHERE c.practiceId = ? AND c.status = 'VISIBLE'
+      ORDER BY c.createdAt ASC
+      `,
       [practiceId]
     );
 
-    // Build tree in memory (simple and fast for HND scale)
-    const map = new Map();
-    const roots = [];
-
-    for (const row of rows) {
-      map.set(row.commentId, { ...row, replies: [] });
-    }
-
-    for (const row of rows) {
-      const node = map.get(row.commentId);
-      if (row.parentCommentId && map.has(row.parentCommentId)) {
-        map.get(row.parentCommentId).replies.push(node);
-      } else {
-        roots.push(node);
-      }
-    }
-
-    return res.json({ practiceId, comments: roots });
+    return res.json({ practiceId, comments: rows });
   } catch (err) {
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
 
 module.exports = router;
