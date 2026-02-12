@@ -194,19 +194,19 @@ export default function DiscussionsPage() {
   // List mode (no practiceId)
   if (!practiceId) {
     return (
-      <div>
+      <div className="p-3 ">
         <h1 className="font-heading text-2xl font-semibold">Discussions</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-300/70">
+        <p className="mt-0 text-slate-600 dark:text-slate-300/70">
           Your discussion threads.
         </p>
 
-        <div className="mt-6">
+        <div className="mt-4 ">
           {loadingList && (
             <p className="text-slate-500">Loading discussions...</p>
           )}
 
           {errorList && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
               {errorList}
               <div className="mt-2 text-sm text-slate-500 dark:text-slate-300/70">
                 For now: open a practice and click <b>Comments</b>.
@@ -228,17 +228,17 @@ export default function DiscussionsPage() {
 
   // Thread mode (chat)
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col p-2">
       {/* Header */}
-      <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
         <p className="text-xs text-slate-500 dark:text-slate-300/70">
           Practice discussion
         </p>
         <h1 className="mt-1 font-heading text-xl font-semibold">
           {practiceInfo?.title || "Practice discussion"}
         </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-          by{" "}
+        <p className="text-xs text-slate-600 dark:text-slate-300/70">
+          Practice by{" "}
           <span className="font-semibold">
             {practiceInfo?.authorName || "Community member"}
           </span>
@@ -249,7 +249,7 @@ export default function DiscussionsPage() {
       {errorThread && <p className="text-red-600">{errorThread}</p>}
 
       {/* Messages container */}
-      <div className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
         {!loadingThread && !errorThread && comments.length === 0 && (
           <p className="text-slate-600 dark:text-slate-300/70">
             No messages yet. Be the first to comment.
@@ -291,7 +291,7 @@ export default function DiscussionsPage() {
                 {/* ✅ Show replied-to message */}
                 {c.parentCommentId ? (
                   <div
-                    className={`mb-2 rounded-xl px-3 py-2 text-[12px] leading-snug ${
+                    className={`mb-1 rounded-xl px-3 py-2 text-[12px] leading-snug ${
                       isMine
                         ? "bg-white/15 text-white"
                         : "bg-black/5 text-slate-700 dark:bg-white/10 dark:text-slate-200"
@@ -321,7 +321,7 @@ export default function DiscussionsPage() {
 
                 <p className="whitespace-pre-wrap">{c.content}</p>
 
-                <div className="mt-2 flex items-center justify-between gap-3">
+                <div className="mt-1 flex items-center justify-between gap-3">
                   <p className="text-[10px] opacity-70">
                     {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
                   </p>
@@ -383,16 +383,16 @@ export default function DiscussionsPage() {
       )}
 
       {/* Input */}
-      <div className="mt-3 flex items-end gap-3">
+      <div className="mt-3 flex items-end gap-2">
         <textarea
           value={replyTo ? replyText : message}
           onChange={(e) => (replyTo ? setReplyText(e.target.value) : setMessage(e.target.value))}
           onKeyDown={onKeyDown}
-          rows={2}
+          rows={1}
           placeholder={
             replyTo
-              ? "Write a reply... (Enter to send, Shift+Enter for new line)"
-              : "Write a message... (Enter to send, Shift+Enter for new line)"
+              ? "Write a reply..."
+              : "Write a message..."
           }
           className="flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-400"
         />
@@ -401,7 +401,7 @@ export default function DiscussionsPage() {
           type="button"
           disabled={sending}
           onClick={() => (replyTo ? handleReplySend() : handleSend())}
-          className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+          className="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
         >
           {sending ? "Sending..." : "Send"}
         </button>
