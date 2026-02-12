@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { api } from "../../api/api";
 
 export default function DiscussionsPage() {
@@ -283,9 +284,10 @@ export default function DiscussionsPage() {
     <div className="flex h-full flex-col p-2">
       {/* Header */}
       <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <p className="text-xs text-slate-500 dark:text-slate-300/70">
-          Practice discussion
-        </p>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => navigate("/app/discussions")} className="rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10" > <ArrowLeft size={18} /> </button>
+          <p className="text-xs text-slate-500 dark:text-slate-300/70">Practice discussions</p>
+        </div>
         <h1 className="mt-1 font-heading text-xl font-semibold">
           {practiceInfo?.title || "Practice discussion"}
         </h1>

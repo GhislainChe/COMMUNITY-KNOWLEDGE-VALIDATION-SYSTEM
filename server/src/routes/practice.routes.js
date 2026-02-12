@@ -11,7 +11,16 @@ const router = express.Router();
  */
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { title, description, steps } = req.body;
+    const {
+      title,
+      description,
+      steps,
+      overview,
+      materials,
+      season,
+      location,
+      imageUrl,
+    } = req.body;
 
     // Validate input (basic)
     if (!title || !description || !steps) {
@@ -23,9 +32,25 @@ router.post("/", requireAuth, async (req, res) => {
     // req.user comes from JWT payload (set by requireAuth)
     const userId = req.user.userId;
 
+    // Optional cleanup
+    const clean = (v) => (typeof v === "string" ? v.trim() : null);
+
     const [result] = await pool.query(
-      "INSERT INTO practices (userId, title, description, steps) VALUES (?, ?, ?, ?)",
-      [userId, title, description, steps],
+      `INSERT INTO practices
+        (userId, title, description, steps, overview, materials, season, location, imageUrl)
+       VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        clean(title),
+        clean(description),
+        clean(steps),
+        clean(overview),
+        clean(materials),
+        clean(season),
+        clean(location),
+        clean(imageUrl),
+      ]
     );
 
     return res.status(201).json({
@@ -48,15 +73,34 @@ router.get("/", async (req, res) => {
   try {
     const q = req.query.q ? `%${req.query.q}%` : null;
 
-    let sql =
-      "SELECT p.practiceId, p.title, p.description, p.steps, p.effectivenessScore, p.confidenceLevel, p.createdAt, u.fullName AS authorName FROM practices p JOIN users u ON u.userId = p.userId WHERE p.status='ACTIVE' ORDER BY p.createdAt DESC";
-    let params = [];
+    let sql = `
+      SELECT
+        p.practiceId,
+        p.title,
+        p.description,
+        p.steps,
+        p.overview,
+        p.materials,
+        p.season,
+        p.location,
+        p.imageUrl,
+        p.effectivenessScore,
+        p.confidenceLevel,
+        p.createdAt,
+        u.fullName AS authorName
+      FROM practices p
+      JOIN users u ON u.userId = p.userId
+      WHERE p.status='ACTIVE'
+    `;
+
+    const params = [];
 
     if (q) {
-      sql =
-        "SELECT p.practiceId, p.title, p.description, p.steps, p.effectivenessScore, p.confidenceLevel, p.createdAt, u.fullName AS authorName FROM practices p JOIN users u ON u.userId = p.userId WHERE p.status='ACTIVE' ORDER BY createdAt DESC";
-      params = [q];
+      sql += ` AND (p.title LIKE ? OR p.description LIKE ? OR p.steps LIKE ?)`;
+      params.push(q, q, q);
     }
+
+    sql += ` ORDER BY p.createdAt DESC`;
 
     const [rows] = await pool.query(sql, params);
     return res.json({ practices: rows });
@@ -74,27 +118,33 @@ router.get("/applied", requireAuth, async (req, res) => {
   try {
     const [rows] = await pool.query(
       `
-  SELECT 
-    ap.appliedId,
-    ap.status AS appliedStatus,
-    ap.appliedAt,
-    ap.reportedAt,
+      SELECT 
+        ap.appliedId,
+        ap.status AS appliedStatus,
+        ap.appliedAt,
+        ap.reportedAt,
 
-    p.practiceId,
-    p.title,
-    p.description,
-    p.effectivenessScore,
-    p.confidenceLevel,
-    p.createdAt,
+        p.practiceId,
+        p.title,
+        p.description,
+        p.steps,
+        p.overview,
+        p.materials,
+        p.season,
+        p.location,
+        p.imageUrl,
+        p.effectivenessScore,
+        p.confidenceLevel,
+        p.createdAt,
 
-    u.fullName AS authorName
-  FROM applied_practices ap
-  JOIN practices p ON p.practiceId = ap.practiceId
-  JOIN users u ON u.userId = p.userId
-  WHERE ap.userId = ?
-  ORDER BY ap.appliedAt DESC
-  `,
-      [userId],
+        u.fullName AS authorName
+      FROM applied_practices ap
+      JOIN practices p ON p.practiceId = ap.practiceId
+      JOIN users u ON u.userId = p.userId
+      WHERE ap.userId = ?
+      ORDER BY ap.appliedAt DESC
+      `,
+      [userId]
     );
 
     res.json({ applied: rows });
@@ -134,7 +184,8 @@ router.get("/:id/stats", requireAuth, async (req, res) => {
     const answered = Number(s.totalRecommendationAnswered || 0);
     const yes = Number(s.yesCount || 0);
 
-    const recommendedRate = answered === 0 ? 0 : Math.round((yes / answered) * 100);
+    const recommendedRate =
+      answered === 0 ? 0 : Math.round((yes / answered) * 100);
 
     return res.json({
       totalReports: Number(s.totalReports || 0),
@@ -153,8 +204,6 @@ router.get("/:id/stats", requireAuth, async (req, res) => {
   }
 });
 
-
-
 /**
  * GET /api/practices/:practiceId
  * Public: returns a single practice detail + stats.
@@ -170,12 +219,13 @@ router.get("/:practiceId", async (req, res) => {
     const [rows] = await pool.query(
       `SELECT 
          p.practiceId, p.userId, p.title, p.description, p.steps,
+         p.overview, p.materials, p.season, p.location, p.imageUrl,
          p.status, p.effectivenessScore, p.confidenceLevel, p.createdAt,
          u.fullName AS authorName, u.credibilityScore AS authorCredibility, u.userRole AS authorRole
        FROM practices p
        JOIN users u ON u.userId = p.userId
        WHERE p.practiceId = ?`,
-      [practiceId],
+      [practiceId]
     );
 
     if (rows.length === 0) {
@@ -184,8 +234,6 @@ router.get("/:practiceId", async (req, res) => {
 
     const practice = rows[0];
 
-    // Optional: hide removed practices from public users
-    // If you want removed practices to be visible only to moderators/admin later, we can modify this.
     if (practice.status !== "ACTIVE") {
       return res.status(403).json({ message: "Practice is not available" });
     }
@@ -197,7 +245,7 @@ router.get("/:practiceId", async (req, res) => {
          SUM(CASE WHEN status='VALID' THEN 1 ELSE 0 END) AS validReports
        FROM outcomeReports
        WHERE practiceId = ?`,
-      [practiceId],
+      [practiceId]
     );
 
     const totalReports = Number(outcomeStats[0].totalReports || 0);
@@ -208,7 +256,7 @@ router.get("/:practiceId", async (req, res) => {
       `SELECT COUNT(*) AS visibleComments
        FROM comments
        WHERE practiceId = ? AND status='VISIBLE'`,
-      [practiceId],
+      [practiceId]
     );
 
     const visibleComments = Number(commentStats[0].visibleComments || 0);
@@ -220,6 +268,11 @@ router.get("/:practiceId", async (req, res) => {
         title: practice.title,
         description: practice.description,
         steps: practice.steps,
+        overview: practice.overview,
+        materials: practice.materials,
+        season: practice.season,
+        location: practice.location,
+        imageUrl: practice.imageUrl,
         effectivenessScore: Number(practice.effectivenessScore),
         confidenceLevel: practice.confidenceLevel,
         createdAt: practice.createdAt,
@@ -254,7 +307,7 @@ router.post("/:id/apply", requireAuth, async (req, res) => {
     // 1. Check that practice exists
     const [practice] = await pool.query(
       "SELECT practiceId FROM practices WHERE practiceId = ? AND status = 'ACTIVE'",
-      [practiceId],
+      [practiceId]
     );
 
     if (practice.length === 0) {
@@ -264,7 +317,7 @@ router.post("/:id/apply", requireAuth, async (req, res) => {
     // 2. Apply practice
     await pool.query(
       "INSERT INTO applied_practices (userId, practiceId) VALUES (?, ?)",
-      [userId, practiceId],
+      [userId, practiceId]
     );
 
     return res.json({
