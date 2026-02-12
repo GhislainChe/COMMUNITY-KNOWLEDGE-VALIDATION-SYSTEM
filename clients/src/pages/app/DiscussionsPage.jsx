@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../api/api";
 
 export default function DiscussionsPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const practiceId = searchParams.get("practiceId"); // thread mode if exists
 
   const user = useMemo(() => {
@@ -85,7 +87,7 @@ export default function DiscussionsPage() {
         setComments(flat);
       } catch (err) {
         setErrorThread(
-          err?.response?.data?.message || "Failed to load discussion"
+          err?.response?.data?.message || "Failed to load discussion",
         );
       } finally {
         setLoadingThread(false);
@@ -109,13 +111,17 @@ export default function DiscussionsPage() {
         const raw = res.data;
 
         const data =
-          (Array.isArray(raw) && raw) || raw?.threads || raw?.data || raw?.results || [];
+          (Array.isArray(raw) && raw) ||
+          raw?.threads ||
+          raw?.data ||
+          raw?.results ||
+          [];
 
         setThreads(Array.isArray(data) ? data : []);
       } catch (err) {
         setErrorList(
           err?.response?.data?.message ||
-            "Discussion list endpoint not available yet (we will add it)."
+            "Discussion list endpoint not available yet (we will add it).",
         );
       } finally {
         setLoadingList(false);
@@ -168,7 +174,7 @@ export default function DiscussionsPage() {
       setSending(true);
       await api.post(
         `/practices/${practiceId}/comments/${replyTo.commentId}/replies`,
-        { content: trimmed }
+        { content: trimmed },
       );
 
       setReplyText("");
@@ -221,6 +227,52 @@ export default function DiscussionsPage() {
           )}
 
           {/* When backend endpoint exists, render thread list here */}
+          {/* Thread list */}
+          {!loadingList && !errorList && threads.length > 0 && (
+            <div className="mt-6 space-y-3">
+              {threads.map((t) => (
+                <button
+                  key={t.practiceId}
+                  type="button"
+                  onClick={() =>
+                    navigate(`/app/discussions?practiceId=${t.practiceId}`)
+                  }
+                  className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:bg-slate-50
+                   dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900 dark:text-white">
+                        {t.title || "Practice discussion"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-300/70">
+                        by{" "}
+                        <span className="font-semibold">
+                          {t.authorName || "Community member"}
+                        </span>
+                      </p>
+                      <p className="mt-2 truncate text-sm text-slate-700 dark:text-slate-200">
+                        {t.lastMessage || "No message yet"}
+                      </p>
+                    </div>
+
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-300/70">
+                        {t.lastAt ? new Date(t.lastAt).toLocaleString() : ""}
+                      </p>
+
+                      <span
+                        className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-700
+                             dark:bg-emerald-500/15 dark:text-emerald-200"
+                      >
+                        {t.messagesCount || 0}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -386,14 +438,12 @@ export default function DiscussionsPage() {
       <div className="mt-3 flex items-end gap-2">
         <textarea
           value={replyTo ? replyText : message}
-          onChange={(e) => (replyTo ? setReplyText(e.target.value) : setMessage(e.target.value))}
+          onChange={(e) =>
+            replyTo ? setReplyText(e.target.value) : setMessage(e.target.value)
+          }
           onKeyDown={onKeyDown}
           rows={1}
-          placeholder={
-            replyTo
-              ? "Write a reply..."
-              : "Write a message..."
-          }
+          placeholder={replyTo ? "Write a reply..." : "Write a message..."}
           className="flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-400"
         />
 
