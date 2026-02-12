@@ -6,6 +6,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 // ✅ Put a default image in: clients/src/assets/practice-default.jpg
 import defaultPracticeImg from "../../assets/practice-default.jpg";
 
+const API_BASE = "http://localhost:5000";
+
 export default function PracticesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [openPracticeId, setOpenPracticeId] = useState(null);
@@ -30,6 +32,7 @@ export default function PracticesPage() {
   const [addLoading, setAddLoading] = useState(false);
   const [addErr, setAddErr] = useState("");
   const [addMsg, setAddMsg] = useState("");
+  const [imageFile, setImageFile] = useState(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -39,7 +42,6 @@ export default function PracticesPage() {
     materials: "",
     season: "",
     location: "",
-    imageUrl: "",
   });
 
   useEffect(() => {
@@ -143,6 +145,7 @@ export default function PracticesPage() {
     setAddLoading(false);
     setAddErr("");
     setAddMsg("");
+    setImageFile(null);
     setForm({
       title: "",
       description: "",
@@ -151,7 +154,6 @@ export default function PracticesPage() {
       materials: "",
       season: "",
       location: "",
-      imageUrl: "",
     });
   }
 
@@ -176,18 +178,23 @@ export default function PracticesPage() {
     try {
       setAddLoading(true);
 
-      const payload = {
-        title: form.title.trim(),
-        description: form.description.trim(),
-        steps: form.steps.trim(),
-        overview: form.overview.trim() || null,
-        materials: form.materials.trim() || null,
-        season: form.season.trim() || null,
-        location: form.location.trim() || null,
-        imageUrl: form.imageUrl.trim() || null,
-      };
+      // ✅ Use FormData for file upload
+      const fd = new FormData();
+      fd.append("title", form.title.trim());
+      fd.append("description", form.description.trim());
+      fd.append("steps", form.steps.trim());
+      fd.append("overview", form.overview.trim());
+      fd.append("materials", form.materials.trim());
+      fd.append("season", form.season.trim());
+      fd.append("location", form.location.trim());
 
-      await api.post("/practices", payload);
+      if (imageFile) {
+        fd.append("image", imageFile); // must match multer field name: .single("image")
+      }
+
+      await api.post("/practices", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       setAddMsg("Practice added successfully ✅");
 
@@ -226,7 +233,12 @@ export default function PracticesPage() {
       ) : (
         <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {practices.map((p) => {
-            const imgSrc = p.imageUrl || defaultPracticeImg;
+            // ✅ If backend stores /uploads/... then prefix with API_BASE
+            const imgSrc = p.imageUrl
+              ? p.imageUrl.startsWith("http")
+                ? p.imageUrl
+                : `${API_BASE}${p.imageUrl}`
+              : defaultPracticeImg;
 
             return (
               <div
@@ -302,7 +314,7 @@ export default function PracticesPage() {
         </div>
       )}
 
-      {/* ✅ ADD PRACTICE MODAL (RESPONSIVE FIXED) */}
+      {/* ✅ ADD PRACTICE MODAL (RESPONSIVE + FILE UPLOAD) */}
       {addOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
           <div
@@ -361,17 +373,21 @@ export default function PracticesPage() {
                     />
                   </div>
 
+                  {/* ✅ FILE UPLOAD (instead of image URL) */}
                   <div>
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                      Image URL (optional)
+                      Upload image (optional)
                     </label>
                     <input
-                      value={form.imageUrl}
-                      onChange={(e) => setField("imageUrl", e.target.value)}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                       className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                       focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                      placeholder="https://..."
                     />
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-300/70">
+                      {imageFile ? `Selected: ${imageFile.name}` : "JPG/PNG/WEBP (max 3MB)"}
+                    </p>
                   </div>
                 </div>
 
@@ -487,20 +503,17 @@ export default function PracticesPage() {
       {/* OUTCOME MODAL (your existing one - unchanged) */}
       {openPracticeId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={closeOutcomeModal}
           />
 
-          {/* Modal box */}
           <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="font-heading text-lg font-bold">Submit outcome</h2>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-                  Practice ID:{" "}
-                  <span className="font-semibold">{openPracticeId}</span>
+                  Practice ID: <span className="font-semibold">{openPracticeId}</span>
                 </p>
               </div>
 
@@ -515,7 +528,6 @@ export default function PracticesPage() {
               </button>
             </div>
 
-            {/* Messages */}
             {submitErr && (
               <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
                 {submitErr}

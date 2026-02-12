@@ -99,7 +99,12 @@ export default function PracticeDetailsPage() {
   if (error) return <p className="text-red-600">{error}</p>;
   if (!practice) return <p className="text-slate-500">Practice not found.</p>;
 
-  const imgSrc = practice.imageUrl || defaultPracticeImg;
+ const imgSrc = practice.imageUrl
+  ? practice.imageUrl.startsWith("http")
+    ? practice.imageUrl
+    : `http://localhost:5000${practice.imageUrl}`
+  : defaultPracticeImg;
+
 
   return (
     <div className="mx-auto w-full max-w-1xl p-0 sm:p-4 md:p-6">
