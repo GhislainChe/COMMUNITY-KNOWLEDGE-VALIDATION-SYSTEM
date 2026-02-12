@@ -11,6 +11,7 @@ const discussionsRoutes = require("./routes/discussions.routes");
 const flagRoutes = require("./routes/flag.routes");
 const moderationRoutes = require("./routes/moderation.routes");
 const adminRoutes = require("./routes/admin.routes");
+const path = require("path");
 
 const app = express();
 app.use(cors());
@@ -29,6 +30,8 @@ app.get("/api/me", requireAuth, async (req, res) => {
   // req.user comes from the token payload
   return res.json({ message: "You are authenticated", user: req.user });
 });
+
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/practices", practiceRoutes);

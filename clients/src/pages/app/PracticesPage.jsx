@@ -302,16 +302,18 @@ export default function PracticesPage() {
         </div>
       )}
 
-      {/* ✅ ADD PRACTICE MODAL */}
+      {/* ✅ ADD PRACTICE MODAL (RESPONSIVE FIXED) */}
       {addOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={closeAddModal}
           />
 
-          <div className="relative w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
-            <div className="flex items-start justify-between gap-4">
+          {/* Panel */}
+          <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-4 dark:border-white/10">
               <div>
                 <h2 className="font-heading text-lg font-bold">Add Practice</h2>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
@@ -330,155 +332,159 @@ export default function PracticesPage() {
               </button>
             </div>
 
-            {addErr && (
-              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
-                {addErr}
-              </div>
-            )}
+            {/* Body (scrollable on mobile) */}
+            <div className="max-h-[80vh] overflow-y-auto p-4">
+              {addErr && (
+                <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+                  {addErr}
+                </div>
+              )}
 
-            {addMsg && (
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
-                {addMsg}
-              </div>
-            )}
+              {addMsg && (
+                <div className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
+                  {addMsg}
+                </div>
+              )}
 
-            <form onSubmit={submitPractice} className="mt-4 space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
+              <form onSubmit={submitPractice} className="space-y-3 sm:space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                      Title *
+                    </label>
+                    <input
+                      value={form.title}
+                      onChange={(e) => setField("title", e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                      focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                      placeholder="e.g. Neem leaves pest control"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                      Image URL (optional)
+                    </label>
+                    <input
+                      value={form.imageUrl}
+                      onChange={(e) => setField("imageUrl", e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                      focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                    Title *
+                    Description *
                   </label>
-                  <input
-                    value={form.title}
-                    onChange={(e) => setField("title", e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setField("description", e.target.value)}
+                    rows={2}
+                    className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                     focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                    placeholder="e.g. Neem leaves pest control"
+                    placeholder="Short description of what the practice does."
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                      Season (optional)
+                    </label>
+                    <input
+                      value={form.season}
+                      onChange={(e) => setField("season", e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                      focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                      placeholder="e.g. Rainy season"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                      Location (optional)
+                    </label>
+                    <input
+                      value={form.location}
+                      onChange={(e) => setField("location", e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                      focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                      placeholder="e.g. Bamenda"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Overview (optional)
+                  </label>
+                  <textarea
+                    value={form.overview}
+                    onChange={(e) => setField("overview", e.target.value)}
+                    rows={2}
+                    className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                    placeholder="Extra context about when/why it works."
                   />
                 </div>
 
                 <div>
                   <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                    Image URL (optional)
+                    Steps / How to do it *
                   </label>
-                  <input
-                    value={form.imageUrl}
-                    onChange={(e) => setField("imageUrl", e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                  <textarea
+                    value={form.steps}
+                    onChange={(e) => setField("steps", e.target.value)}
+                    rows={4}
+                    className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                     focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                  Description *
-                </label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setField("description", e.target.value)}
-                  rows={3}
-                  className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                  focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                  placeholder="Short description of what the practice does."
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                    Season (optional)
-                  </label>
-                  <input
-                    value={form.season}
-                    onChange={(e) => setField("season", e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                    placeholder="e.g. Rainy season"
+                    placeholder="Write the steps clearly."
                   />
                 </div>
 
                 <div>
                   <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                    Location (optional)
+                    Materials needed (optional)
                   </label>
-                  <input
-                    value={form.location}
-                    onChange={(e) => setField("location", e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                  <textarea
+                    value={form.materials}
+                    onChange={(e) => setField("materials", e.target.value)}
+                    rows={2}
+                    className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                     focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                    placeholder="e.g. Bamenda"
+                    placeholder="List materials/tools needed."
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                  Overview (optional)
-                </label>
-                <textarea
-                  value={form.overview}
-                  onChange={(e) => setField("overview", e.target.value)}
-                  rows={2}
-                  className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                  focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                  placeholder="Extra context about when/why it works."
-                />
-              </div>
+                {/* Buttons (stack on mobile) */}
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={closeAddModal}
+                    className="w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
+                    dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                  >
+                    Cancel
+                  </button>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                  Steps / How to do it *
-                </label>
-                <textarea
-                  value={form.steps}
-                  onChange={(e) => setField("steps", e.target.value)}
-                  rows={4}
-                  className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                  focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                  placeholder="Write the steps clearly."
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                  Materials needed (optional)
-                </label>
-                <textarea
-                  value={form.materials}
-                  onChange={(e) => setField("materials", e.target.value)}
-                  rows={3}
-                  className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                  focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                  placeholder="List materials/tools needed."
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={closeAddModal}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
-                  dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={addLoading}
-                  className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
-                >
-                  {addLoading ? "Saving..." : "Save Practice"}
-                </button>
-              </div>
-            </form>
+                  <button
+                    type="submit"
+                    disabled={addLoading}
+                    className="w-full sm:w-auto rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
+                  >
+                    {addLoading ? "Saving..." : "Save Practice"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
-      {/* OUTCOME MODAL (your existing one) */}
+      {/* OUTCOME MODAL (your existing one - unchanged) */}
       {openPracticeId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
@@ -493,7 +499,8 @@ export default function PracticesPage() {
               <div>
                 <h2 className="font-heading text-lg font-bold">Submit outcome</h2>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-                  Practice ID: <span className="font-semibold">{openPracticeId}</span>
+                  Practice ID:{" "}
+                  <span className="font-semibold">{openPracticeId}</span>
                 </p>
               </div>
 
