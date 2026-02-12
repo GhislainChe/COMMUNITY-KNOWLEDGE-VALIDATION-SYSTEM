@@ -1,9 +1,7 @@
 // clients/src/pages/app/PracticesPage.jsx
 import { useEffect, useState } from "react";
 import { api } from "../../api/api";
-import { useNavigate } from "react-router-dom";
-import { useSearchParams } from "react-router-dom";
-import { X } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 // ✅ Put a default image in: clients/src/assets/practice-default.jpg
 import defaultPracticeImg from "../../assets/practice-default.jpg";
@@ -16,24 +14,38 @@ export default function PracticesPage() {
   const [practices, setPractices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Outcome modal state
   const [outcomeType, setOutcomeType] = useState("EFFECTIVE");
   const [similarContext, setSimilarContext] = useState("Y");
   const [comment, setComment] = useState("");
   const [durationDays, setDurationDays] = useState("");
   const [recommendation, setRecommendation] = useState("YES");
-
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitErr, setSubmitErr] = useState("");
   const [submitMsg, setSubmitMsg] = useState("");
+
+  // ✅ Add Practice modal state
+  const [addOpen, setAddOpen] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+  const [addErr, setAddErr] = useState("");
+  const [addMsg, setAddMsg] = useState("");
+
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    steps: "",
+    overview: "",
+    materials: "",
+    season: "",
+    location: "",
+    imageUrl: "",
+  });
 
   useEffect(() => {
     const id = searchParams.get("submitOutcomeFor");
     if (id) setOpenPracticeId(Number(id));
   }, [searchParams]);
-
-  // useEffect(() => {
-  //   console.log("openPracticeId =", openPracticeId);
-  // }, [openPracticeId]);
 
   useEffect(() => {
     if (!openPracticeId) return;
@@ -47,26 +59,24 @@ export default function PracticesPage() {
     setSubmitMsg("");
   }, [openPracticeId]);
 
-  useEffect(() => {
-    async function fetchPractices() {
-      try {
-        const res = await api.get("/practices");
-        console.log("Practices response:", res.data);
+  async function fetchPractices() {
+    try {
+      setLoading(true);
+      setError("");
 
-        // Backend may return an array OR { practices: [...] }
-        const list = Array.isArray(res.data)
-          ? res.data
-          : res.data?.practices || [];
+      const res = await api.get("/practices");
 
-        setPractices(list);
-      } catch (err) {
-        setError("Failed to load practices.");
-      } finally {
-        setLoading(false);
-      }
+      // Backend may return an array OR { practices: [...] }
+      const list = Array.isArray(res.data) ? res.data : res.data?.practices || [];
+      setPractices(list);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to load practices.");
+    } finally {
+      setLoading(false);
     }
-    console.log("Fetching practices...");
+  }
 
+  useEffect(() => {
     fetchPractices();
   }, []);
 
@@ -75,6 +85,7 @@ export default function PracticesPage() {
 
     const next = new URLSearchParams(searchParams);
     next.delete("submitOutcomeFor");
+    next.delete("from");
     setSearchParams(next, { replace: true });
   }
 
@@ -106,9 +117,9 @@ export default function PracticesPage() {
       await api.post(`/practices/${openPracticeId}/outcomes`, payload);
 
       setSubmitMsg("Outcome submitted successfully ✅");
+
       const from = searchParams.get("from");
       if (from === "bookmarks") {
-        // close modal + go back to bookmarks
         setTimeout(() => {
           closeOutcomeModal();
           navigate("/app/bookmarks", { replace: true });
@@ -116,7 +127,6 @@ export default function PracticesPage() {
         return;
       }
 
-      // Close after short moment
       setTimeout(() => {
         closeOutcomeModal();
       }, 750);
@@ -127,13 +137,74 @@ export default function PracticesPage() {
     }
   }
 
-  if (loading) {
-    return <p className="text-slate-500">Loading practices...</p>;
+  // ✅ Add Practice helpers
+  function openAddModal() {
+    setAddOpen(true);
+    setAddLoading(false);
+    setAddErr("");
+    setAddMsg("");
+    setForm({
+      title: "",
+      description: "",
+      steps: "",
+      overview: "",
+      materials: "",
+      season: "",
+      location: "",
+      imageUrl: "",
+    });
   }
 
-  if (error) {
-    return <p className="text-red-600">{error}</p>;
+  function closeAddModal() {
+    setAddOpen(false);
   }
+
+  function setField(name, value) {
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function submitPractice(e) {
+    e.preventDefault();
+    setAddErr("");
+    setAddMsg("");
+
+    if (!form.title.trim() || !form.description.trim() || !form.steps.trim()) {
+      setAddErr("Title, description and steps are required.");
+      return;
+    }
+
+    try {
+      setAddLoading(true);
+
+      const payload = {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        steps: form.steps.trim(),
+        overview: form.overview.trim() || null,
+        materials: form.materials.trim() || null,
+        season: form.season.trim() || null,
+        location: form.location.trim() || null,
+        imageUrl: form.imageUrl.trim() || null,
+      };
+
+      await api.post("/practices", payload);
+
+      setAddMsg("Practice added successfully ✅");
+
+      // Refresh list and close
+      await fetchPractices();
+      setTimeout(() => {
+        closeAddModal();
+      }, 450);
+    } catch (err) {
+      setAddErr(err?.response?.data?.message || "Failed to add practice.");
+    } finally {
+      setAddLoading(false);
+    }
+  }
+
+  if (loading) return <p className="text-slate-500">Loading practices...</p>;
+  if (error) return <p className="text-red-600">{error}</p>;
 
   return (
     <div className="text-slate-900 dark:text-slate-100 p-3">
@@ -142,8 +213,10 @@ export default function PracticesPage() {
           <h1 className="font-heading text-2xl font-semibold">Practices</h1>
         </div>
 
-        {/* Placeholder button for later (Create Practice) */}
-        <button className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
+        <button
+          onClick={openAddModal}
+          className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+        >
           Add Practice
         </button>
       </div>
@@ -167,9 +240,7 @@ export default function PracticesPage() {
                   className="absolute inset-0 h-full w-full object-cover"
                 />
 
-                {/* Gradient overlay like the sample:
-          - clearer at top
-          - darker at bottom for readability */}
+                {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/75" />
 
                 {/* Top-right author badge */}
@@ -177,7 +248,7 @@ export default function PracticesPage() {
                   by {p.authorName || "Community member"}
                 </div>
 
-                {/* Content block sits LOWER (like sample) */}
+                {/* Content block */}
                 <div className="absolute left-2 right-2 bottom-[75px] z-10 text-left">
                   <h2 className="font-heading text-[24px] font-extrabold leading-tight text-white">
                     {p.title}
@@ -201,7 +272,7 @@ export default function PracticesPage() {
                     </span>
                   </div>
 
-                  {/* Second row (confidence + effectiveness) */}
+                  {/* Second row */}
                   <div className="mt-2 flex flex-wrap gap-1">
                     <span className="rounded-full bg-emerald-600/45 px-3 py-1 text-[11px] font-semibold text-emerald-50">
                       {p.confidenceLevel || "LOW"}
@@ -220,7 +291,7 @@ export default function PracticesPage() {
                       e.preventDefault();
                       navigate(`/app/practices/${p.practiceId}`);
                     }}
-                    className="w-full rounded-full bg-white py-3 text-[13px] font-semibold text-slate-900 shadow-sm transition bg-white hover:bg-slate-100 dark:bg-emerald-600/100 dark:text-white dark:hover:bg-white"
+                    className="w-full rounded-full bg-white py-3 text-[13px] font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 dark:bg-emerald-600 dark:text-white dark:hover:bg-white"
                   >
                     View details
                   </button>
@@ -230,6 +301,184 @@ export default function PracticesPage() {
           })}
         </div>
       )}
+
+      {/* ✅ ADD PRACTICE MODAL */}
+      {addOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={closeAddModal}
+          />
+
+          <div className="relative w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-heading text-lg font-bold">Add Practice</h2>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
+                  Share a practice with steps so others can validate it.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeAddModal}
+                className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50
+                dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {addErr && (
+              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+                {addErr}
+              </div>
+            )}
+
+            {addMsg && (
+              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
+                {addMsg}
+              </div>
+            )}
+
+            <form onSubmit={submitPractice} className="mt-4 space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Title *
+                  </label>
+                  <input
+                    value={form.title}
+                    onChange={(e) => setField("title", e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                    placeholder="e.g. Neem leaves pest control"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Image URL (optional)
+                  </label>
+                  <input
+                    value={form.imageUrl}
+                    onChange={(e) => setField("imageUrl", e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                  Description *
+                </label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setField("description", e.target.value)}
+                  rows={3}
+                  className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                  focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                  placeholder="Short description of what the practice does."
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Season (optional)
+                  </label>
+                  <input
+                    value={form.season}
+                    onChange={(e) => setField("season", e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                    placeholder="e.g. Rainy season"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Location (optional)
+                  </label>
+                  <input
+                    value={form.location}
+                    onChange={(e) => setField("location", e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                    placeholder="e.g. Bamenda"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                  Overview (optional)
+                </label>
+                <textarea
+                  value={form.overview}
+                  onChange={(e) => setField("overview", e.target.value)}
+                  rows={2}
+                  className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                  focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                  placeholder="Extra context about when/why it works."
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                  Steps / How to do it *
+                </label>
+                <textarea
+                  value={form.steps}
+                  onChange={(e) => setField("steps", e.target.value)}
+                  rows={4}
+                  className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                  focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                  placeholder="Write the steps clearly."
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                  Materials needed (optional)
+                </label>
+                <textarea
+                  value={form.materials}
+                  onChange={(e) => setField("materials", e.target.value)}
+                  rows={3}
+                  className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                  focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                  placeholder="List materials/tools needed."
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeAddModal}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
+                  dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={addLoading}
+                  className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
+                >
+                  {addLoading ? "Saving..." : "Save Practice"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* OUTCOME MODAL (your existing one) */}
       {openPracticeId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
@@ -242,12 +491,9 @@ export default function PracticesPage() {
           <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="font-heading text-lg font-bold">
-                  Submit outcome
-                </h2>
+                <h2 className="font-heading text-lg font-bold">Submit outcome</h2>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-                  Practice ID:{" "}
-                  <span className="font-semibold">{openPracticeId}</span>
+                  Practice ID: <span className="font-semibold">{openPracticeId}</span>
                 </p>
               </div>
 
@@ -255,134 +501,132 @@ export default function PracticesPage() {
                 type="button"
                 onClick={closeOutcomeModal}
                 className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50
-                     dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                 title="Close"
               >
                 ✕
               </button>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
-              {/* Messages */}
-              {submitErr && (
-                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
-                  {submitErr}
-                </div>
-              )}
-              {submitMsg && (
-                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
-                  {submitMsg}
-                </div>
-              )}
+            {/* Messages */}
+            {submitErr && (
+              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+                {submitErr}
+              </div>
+            )}
+            {submitMsg && (
+              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
+                {submitMsg}
+              </div>
+            )}
 
-              <form onSubmit={submitOutcome} className="mt-4 space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                      Outcome type
-                    </label>
-                    <select
-                      value={outcomeType}
-                      onChange={(e) => setOutcomeType(e.target.value)}
-                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                   focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                    >
-                      <option value="EFFECTIVE">Effective</option>
-                      <option value="PARTIAL">Partially effective</option>
-                      <option value="INEFFECTIVE">Ineffective</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                      Similar context?
-                    </label>
-                    <select
-                      value={similarContext}
-                      onChange={(e) => setSimilarContext(e.target.value)}
-                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                   focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                    >
-                      <option value="Y">Yes (similar)</option>
-                      <option value="N">No (different)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                      Days before reporting
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={durationDays}
-                      onChange={(e) => setDurationDays(e.target.value)}
-                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                   focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                      placeholder="e.g. 7"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                      Recommendation
-                    </label>
-                    <select
-                      value={recommendation}
-                      onChange={(e) => setRecommendation(e.target.value)}
-                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                   focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                    >
-                      <option value="YES">Yes</option>
-                      <option value="NO">No</option>
-                      <option value="MAYBE">Maybe</option>
-                    </select>
-                  </div>
+            <form onSubmit={submitOutcome} className="mt-4 space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Outcome type
+                  </label>
+                  <select
+                    value={outcomeType}
+                    onChange={(e) => setOutcomeType(e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                  >
+                    <option value="EFFECTIVE">Effective</option>
+                    <option value="PARTIAL">Partially effective</option>
+                    <option value="INEFFECTIVE">Ineffective</option>
+                  </select>
                 </div>
 
                 <div>
                   <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-                    Short outcome comment
+                    Similar context?
                   </label>
-                  <textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    rows={4}
-                    className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                 focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                    placeholder="What happened after you applied the practice?"
+                  <select
+                    value={similarContext}
+                    onChange={(e) => setSimilarContext(e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                  >
+                    <option value="Y">Yes (similar)</option>
+                    <option value="N">No (different)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Days before reporting
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={durationDays}
+                    onChange={(e) => setDurationDays(e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                    placeholder="e.g. 7"
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={closeOutcomeModal}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
-                 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Recommendation
+                  </label>
+                  <select
+                    value={recommendation}
+                    onChange={(e) => setRecommendation(e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
                   >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={submitLoading}
-                    className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
-                  >
-                    {submitLoading ? "Submitting..." : "Submit"}
-                  </button>
+                    <option value="YES">Yes</option>
+                    <option value="NO">No</option>
+                    <option value="MAYBE">Maybe</option>
+                  </select>
                 </div>
-              </form>
-            </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                  Short outcome comment
+                </label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  rows={4}
+                  className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                  focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                  placeholder="What happened after you applied the practice?"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeOutcomeModal}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
+                  dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={submitLoading}
+                  className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
+                >
+                  {submitLoading ? "Submitting..." : "Submit"}
+                </button>
+              </div>
+            </form>
 
             <div className="mt-4 flex justify-end">
               <button
                 type="button"
                 onClick={closeOutcomeModal}
                 className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
-                     dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
               >
                 Close
               </button>
