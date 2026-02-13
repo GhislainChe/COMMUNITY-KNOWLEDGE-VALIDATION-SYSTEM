@@ -5,13 +5,31 @@ const { uploadPracticeImage } = require("../middleware/uploadPracticeImage");
 
 const router = express.Router();
 
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+const uploadDir = path.join(__dirname, "..", "uploads");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    cb(null, `${Date.now()}-${Math.random().toString(16).slice(2)}${ext}`);
+  },
+});
+
+const upload = multer({ storage });
+
 /**
  * POST /api/practices
  * Creates a new practice.
  * Protected: user must be logged in.
  */
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   try {
+    // ✅ Now req.body works (multer parsed it)
     const {
       title,
       description,
@@ -20,9 +38,8 @@ router.post("/", requireAuth, async (req, res) => {
       materials,
       season,
       location,
-      imageUrl,
-      cropTypeId,
-      problemTypeId,
+      cropType,
+      problemType,
     } = req.body;
 
     if (!title || !description || !steps) {
@@ -32,33 +49,34 @@ router.post("/", requireAuth, async (req, res) => {
     }
 
     const userId = req.user.userId;
-
-    const cropId = cropTypeId ? Number(cropTypeId) : null;
-    const probId = problemTypeId ? Number(problemTypeId) : null;
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     const [result] = await pool.query(
-      `INSERT INTO practices
-        (userId, title, description, steps, overview, materials, season, location, imageUrl, cropTypeId, problemTypeId)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO practices 
+      (userId, title, description, steps, overview, materials, season, location, cropType, problemType, imageUrl)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
-        title,
-        description,
-        steps,
-        overview || null,
-        materials || null,
-        season || null,
-        location || null,
-        imageUrl || null,
-        cropId,
-        probId,
+        title.trim(),
+        description.trim(),
+        steps.trim(),
+        overview?.trim() || null,
+        materials?.trim() || null,
+        season?.trim() || null,
+        location?.trim() || null,
+        cropType?.trim() || null,
+        problemType?.trim() || null,
+        imageUrl,
       ],
     );
 
-    return res.status(201).json({
-      message: "Practice created",
-      practiceId: result.insertId,
-    });
+    return res
+      .status(201)
+      .json({
+        message: "Practice created",
+        practiceId: result.insertId,
+        imageUrl,
+      });
   } catch (err) {
     return res
       .status(500)
@@ -98,7 +116,9 @@ router.get("/", async (req, res) => {
     return res.json({ practices: rows });
   } catch (err) {
     console.error("GET /api/practices failed:", err);
-    return res.status(500).json({ message: "Server error", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 });
 
