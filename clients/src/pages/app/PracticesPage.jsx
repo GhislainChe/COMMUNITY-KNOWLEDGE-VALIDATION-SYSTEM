@@ -17,6 +17,11 @@ export default function PracticesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ✅ dropdown data
+  const [cropOptions, setCropOptions] = useState([]);
+  const [problemOptions, setProblemOptions] = useState([]);
+  const [seasonOptions, setSeasonOptions] = useState([]);
+
   // Outcome modal state
   const [outcomeType, setOutcomeType] = useState("EFFECTIVE");
   const [similarContext, setSimilarContext] = useState("Y");
@@ -42,7 +47,29 @@ export default function PracticesPage() {
     materials: "",
     season: "",
     location: "",
+    cropTypeId: "",
+    problemTypeId: "",
   });
+
+  // ✅ Load dropdown options once
+  useEffect(() => {
+    async function loadMeta() {
+      try {
+        const [cropsRes, probsRes, seasonsRes] = await Promise.all([
+          api.get("/meta/crops"),
+          api.get("/meta/problems"),
+          api.get("/meta/seasons"),
+        ]);
+
+        setCropOptions(cropsRes.data?.crops || []);
+        setProblemOptions(probsRes.data?.problems || []);
+        setSeasonOptions(seasonsRes.data?.seasons || []);
+      } catch (e) {
+        console.log("Failed to load dropdown options:", e);
+      }
+    }
+    loadMeta();
+  }, []);
 
   useEffect(() => {
     const id = searchParams.get("submitOutcomeFor");
@@ -154,6 +181,8 @@ export default function PracticesPage() {
       materials: "",
       season: "",
       location: "",
+      cropTypeId: "",
+      problemTypeId: "",
     });
   }
 
@@ -185,8 +214,12 @@ export default function PracticesPage() {
       fd.append("steps", form.steps.trim());
       fd.append("overview", form.overview.trim());
       fd.append("materials", form.materials.trim());
-      fd.append("season", form.season.trim());
+      fd.append("season", form.season || "");
       fd.append("location", form.location.trim());
+
+      // ✅ dropdown ids
+      fd.append("cropTypeId", form.cropTypeId || "");
+      fd.append("problemTypeId", form.problemTypeId || "");
 
       if (imageFile) {
         fd.append("image", imageFile); // must match multer field name: .single("image")
@@ -198,7 +231,6 @@ export default function PracticesPage() {
 
       setAddMsg("Practice added successfully ✅");
 
-      // Refresh list and close
       await fetchPractices();
       setTimeout(() => {
         closeAddModal();
@@ -245,22 +277,18 @@ export default function PracticesPage() {
                 key={p.practiceId}
                 className="relative h-[390px] overflow-hidden rounded-[28px] shadow-md border border-slate-200 bg-white dark:border-white/10 dark:bg-white/10 dark:shadow-black/30 hover:shadow-lg transition-shadow"
               >
-                {/* Background image */}
                 <img
                   src={imgSrc}
                   alt={p.title}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
 
-                {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/75" />
 
-                {/* Top-right author badge */}
                 <div className="absolute right-3 top-2 z-10 rounded-full bg-black/10 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur dark:bg-black/35">
                   by {p.authorName || "Community member"}
                 </div>
 
-                {/* Content block */}
                 <div className="absolute left-2 right-2 bottom-[75px] z-10 text-left">
                   <h2 className="font-heading text-[24px] font-extrabold leading-tight text-white">
                     {p.title}
@@ -271,7 +299,6 @@ export default function PracticesPage() {
                       "Community practice shared with full context and steps."}
                   </p>
 
-                  {/* Pills row */}
                   <div className="mt-3 flex flex-wrap gap-1">
                     <span className="rounded-full bg-black/45 px-3 py-1 text-[11px] font-semibold text-white">
                       {p.cropType || "Crop"}
@@ -284,7 +311,6 @@ export default function PracticesPage() {
                     </span>
                   </div>
 
-                  {/* Second row */}
                   <div className="mt-2 flex flex-wrap gap-1">
                     <span className="rounded-full bg-emerald-600/45 px-3 py-1 text-[11px] font-semibold text-emerald-50">
                       {p.confidenceLevel || "LOW"}
@@ -295,7 +321,6 @@ export default function PracticesPage() {
                   </div>
                 </div>
 
-                {/* Button */}
                 <div className="absolute bottom-3 left-3 right-3 z-10">
                   <button
                     type="button"
@@ -314,7 +339,7 @@ export default function PracticesPage() {
         </div>
       )}
 
-      {/* ✅ ADD PRACTICE MODAL (RESPONSIVE + FILE UPLOAD) */}
+      {/* ✅ ADD PRACTICE MODAL (RESPONSIVE + DROPDOWNS + FILE UPLOAD) */}
       {addOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
           <div
@@ -322,9 +347,7 @@ export default function PracticesPage() {
             onClick={closeAddModal}
           />
 
-          {/* Panel */}
           <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
-            {/* Header */}
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-4 dark:border-white/10">
               <div>
                 <h2 className="font-heading text-lg font-bold">Add Practice</h2>
@@ -344,7 +367,6 @@ export default function PracticesPage() {
               </button>
             </div>
 
-            {/* Body (scrollable on mobile) */}
             <div className="max-h-[80vh] overflow-y-auto p-4">
               {addErr && (
                 <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
@@ -373,7 +395,6 @@ export default function PracticesPage() {
                     />
                   </div>
 
-                  {/* ✅ FILE UPLOAD (instead of image URL) */}
                   <div>
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
                       Upload image (optional)
@@ -405,18 +426,66 @@ export default function PracticesPage() {
                   />
                 </div>
 
+                {/* ✅ DROPDOWNS: Crop + Problem */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                      Crop Type (optional)
+                    </label>
+                    <select
+                      value={form.cropTypeId}
+                      onChange={(e) => setField("cropTypeId", e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                      focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                    >
+                      <option value="">Select crop</option>
+                      {cropOptions.map((c) => (
+                        <option key={c.cropTypeId} value={c.cropTypeId}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                      Problem Type (optional)
+                    </label>
+                    <select
+                      value={form.problemTypeId}
+                      onChange={(e) => setField("problemTypeId", e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+                      focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                    >
+                      <option value="">Select problem</option>
+                      {problemOptions.map((p) => (
+                        <option key={p.problemTypeId} value={p.problemTypeId}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* ✅ Season dropdown + Location input */}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
                       Season (optional)
                     </label>
-                    <input
+                    <select
                       value={form.season}
                       onChange={(e) => setField("season", e.target.value)}
                       className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                       focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-                      placeholder="e.g. Rainy season"
-                    />
+                    >
+                      <option value="">Select season</option>
+                      {seasonOptions.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
@@ -475,7 +544,6 @@ export default function PracticesPage() {
                   />
                 </div>
 
-                {/* Buttons (stack on mobile) */}
                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
                   <button
                     type="button"
@@ -500,7 +568,7 @@ export default function PracticesPage() {
         </div>
       )}
 
-      {/* OUTCOME MODAL (your existing one - unchanged) */}
+      {/* OUTCOME MODAL (unchanged) */}
       {openPracticeId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div

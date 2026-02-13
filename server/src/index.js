@@ -12,6 +12,7 @@ const flagRoutes = require("./routes/flag.routes");
 const moderationRoutes = require("./routes/moderation.routes");
 const adminRoutes = require("./routes/admin.routes");
 const path = require("path");
+const metaRoutes = require("./routes/meta.routes");
 
 const app = express();
 app.use(cors());
@@ -41,6 +42,7 @@ app.use("/api", discussionsRoutes);
 app.use("/api", flagRoutes);
 app.use("/api", moderationRoutes);
 app.use("/api", adminRoutes);
+app.use("/api/meta", metaRoutes);
 
 console.log("DB_PASSWORD loaded?", process.env.DB_PASSWORD ? "YES" : "NO");
 const PORT = process.env.PORT || 5000;

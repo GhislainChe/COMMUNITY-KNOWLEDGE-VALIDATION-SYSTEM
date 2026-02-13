@@ -10,46 +10,61 @@ const router = express.Router();
  * Creates a new practice.
  * Protected: user must be logged in.
  */
-router.post("/", requireAuth, uploadPracticeImage.single("image"), async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
-    // multipart/form-data: text fields are in req.body, file is req.file
-    const { title, description, steps, overview, materials, season, location } = req.body;
+    const {
+      title,
+      description,
+      steps,
+      overview,
+      materials,
+      season,
+      location,
+      imageUrl,
+      cropTypeId,
+      problemTypeId,
+    } = req.body;
 
     if (!title || !description || !steps) {
-      return res.status(400).json({ message: "title, description, and steps are required" });
+      return res
+        .status(400)
+        .json({ message: "title, description, and steps are required" });
     }
 
     const userId = req.user.userId;
 
-    // If file uploaded, save url path (served by /uploads static)
-    const imageUrl = req.file ? `/uploads/practices/${req.file.filename}` : null;
+    const cropId = cropTypeId ? Number(cropTypeId) : null;
+    const probId = problemTypeId ? Number(problemTypeId) : null;
 
     const [result] = await pool.query(
-      `INSERT INTO practices (userId, title, description, steps, overview, materials, season, location, imageUrl)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO practices
+        (userId, title, description, steps, overview, materials, season, location, imageUrl, cropTypeId, problemTypeId)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
-        title.trim(),
-        description.trim(),
-        steps.trim(),
-        overview?.trim() || null,
-        materials?.trim() || null,
-        season?.trim() || null,
-        location?.trim() || null,
-        imageUrl,
-      ]
+        title,
+        description,
+        steps,
+        overview || null,
+        materials || null,
+        season || null,
+        location || null,
+        imageUrl || null,
+        cropId,
+        probId,
+      ],
     );
 
     return res.status(201).json({
       message: "Practice created",
       practiceId: result.insertId,
-      imageUrl,
     });
   } catch (err) {
-    return res.status(500).json({ message: "Server error", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 });
-
 
 /**
  * GET /api/practices
@@ -62,22 +77,19 @@ router.get("/", async (req, res) => {
 
     let sql = `
       SELECT
-        p.practiceId,
-        p.title,
-        p.description,
-        p.steps,
-        p.overview,
-        p.materials,
-        p.season,
-        p.location,
-        p.imageUrl,
-        p.effectivenessScore,
-        p.confidenceLevel,
-        p.createdAt,
-        u.fullName AS authorName
-      FROM practices p
-      JOIN users u ON u.userId = p.userId
-      WHERE p.status='ACTIVE'
+  p.practiceId, p.title, p.description, p.steps,
+  p.effectivenessScore, p.confidenceLevel, p.createdAt,
+  p.season, p.location, p.imageUrl,
+  ct.name AS cropType,
+  pt.name AS problemType,
+  u.fullName AS authorName
+FROM practices p
+JOIN users u ON u.userId = p.userId
+LEFT JOIN cropTypes ct ON ct.cropTypeId = p.cropTypeId
+LEFT JOIN problemTypes pt ON pt.problemTypeId = p.problemTypeId
+WHERE p.status='ACTIVE'
+ORDER BY p.createdAt DESC;
+
     `;
 
     const params = [];
@@ -131,7 +143,7 @@ router.get("/applied", requireAuth, async (req, res) => {
       WHERE ap.userId = ?
       ORDER BY ap.appliedAt DESC
       `,
-      [userId]
+      [userId],
     );
 
     res.json({ applied: rows });
@@ -164,7 +176,7 @@ router.get("/:id/stats", requireAuth, async (req, res) => {
       FROM outcomeReports
       WHERE practiceId = ? AND status = 'VALID'
       `,
-      [practiceId]
+      [practiceId],
     );
 
     const s = rows[0] || {};
@@ -187,7 +199,9 @@ router.get("/:id/stats", requireAuth, async (req, res) => {
       recommendedRate,
     });
   } catch (err) {
-    return res.status(500).json({ message: "Server error", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 });
 
@@ -212,7 +226,7 @@ router.get("/:practiceId", async (req, res) => {
        FROM practices p
        JOIN users u ON u.userId = p.userId
        WHERE p.practiceId = ?`,
-      [practiceId]
+      [practiceId],
     );
 
     if (rows.length === 0) {
@@ -232,7 +246,7 @@ router.get("/:practiceId", async (req, res) => {
          SUM(CASE WHEN status='VALID' THEN 1 ELSE 0 END) AS validReports
        FROM outcomeReports
        WHERE practiceId = ?`,
-      [practiceId]
+      [practiceId],
     );
 
     const totalReports = Number(outcomeStats[0].totalReports || 0);
@@ -243,7 +257,7 @@ router.get("/:practiceId", async (req, res) => {
       `SELECT COUNT(*) AS visibleComments
        FROM comments
        WHERE practiceId = ? AND status='VISIBLE'`,
-      [practiceId]
+      [practiceId],
     );
 
     const visibleComments = Number(commentStats[0].visibleComments || 0);
@@ -294,7 +308,7 @@ router.post("/:id/apply", requireAuth, async (req, res) => {
     // 1. Check that practice exists
     const [practice] = await pool.query(
       "SELECT practiceId FROM practices WHERE practiceId = ? AND status = 'ACTIVE'",
-      [practiceId]
+      [practiceId],
     );
 
     if (practice.length === 0) {
@@ -304,7 +318,7 @@ router.post("/:id/apply", requireAuth, async (req, res) => {
     // 2. Apply practice
     await pool.query(
       "INSERT INTO applied_practices (userId, practiceId) VALUES (?, ?)",
-      [userId, practiceId]
+      [userId, practiceId],
     );
 
     return res.json({
