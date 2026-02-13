@@ -76,27 +76,20 @@ router.get("/", async (req, res) => {
     const q = req.query.q ? `%${req.query.q}%` : null;
 
     let sql = `
-      SELECT
-  p.practiceId, p.title, p.description, p.steps,
-  p.effectivenessScore, p.confidenceLevel, p.createdAt,
-  p.season, p.location, p.imageUrl,
-  ct.name AS cropType,
-  pt.name AS problemType,
-  u.fullName AS authorName
-FROM practices p
-JOIN users u ON u.userId = p.userId
-LEFT JOIN cropTypes ct ON ct.cropTypeId = p.cropTypeId
-LEFT JOIN problemTypes pt ON pt.problemTypeId = p.problemTypeId
-WHERE p.status='ACTIVE'
-ORDER BY p.createdAt DESC;
-
+      SELECT 
+        p.practiceId, p.title, p.description, p.steps,
+        p.effectivenessScore, p.confidenceLevel, p.createdAt,
+        u.fullName AS authorName,
+        p.imageUrl, p.location, p.season
+      FROM practices p
+      JOIN users u ON u.userId = p.userId
+      WHERE p.status='ACTIVE'
     `;
-
     const params = [];
 
     if (q) {
-      sql += ` AND (p.title LIKE ? OR p.description LIKE ? OR p.steps LIKE ?)`;
-      params.push(q, q, q);
+      sql += ` AND (p.title LIKE ? OR p.description LIKE ?)`;
+      params.push(q, q);
     }
 
     sql += ` ORDER BY p.createdAt DESC`;
@@ -104,9 +97,8 @@ ORDER BY p.createdAt DESC;
     const [rows] = await pool.query(sql, params);
     return res.json({ practices: rows });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    console.error("GET /api/practices failed:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
