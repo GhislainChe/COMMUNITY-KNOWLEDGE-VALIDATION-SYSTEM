@@ -2,11 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import defaultPracticeImg from "../../assets/practice-default.jpg";
+import { SlidersHorizontal, X } from "lucide-react";
 
 const API_BASE = "http://localhost:5000";
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
+
+  // ✅ default = trending
+  const [sort, setSort] = useState("trending");
 
   // filters
   const [q, setQ] = useState("");
@@ -15,7 +19,9 @@ export default function DiscoverPage() {
   const [season, setSeason] = useState("");
   const [confidenceLevel, setConfidenceLevel] = useState("");
   const [location, setLocation] = useState("");
-  const [sort, setSort] = useState("new");
+
+  // mobile bottom sheet
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // dropdown options
   const [cropOptions, setCropOptions] = useState([]);
@@ -47,7 +53,6 @@ export default function DiscoverPage() {
     loadMeta();
   }, []);
 
-  // Fetch results
   async function fetchResults() {
     try {
       setLoading(true);
@@ -71,7 +76,7 @@ export default function DiscoverPage() {
     }
   }
 
-  // Load initial
+  // ✅ Load trending results immediately on open
   useEffect(() => {
     fetchResults();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,7 +90,7 @@ export default function DiscoverPage() {
       season ||
       confidenceLevel ||
       location.trim() ||
-      sort !== "new"
+      sort !== "trending"
     );
   }, [q, cropTypeId, problemTypeId, season, confidenceLevel, location, sort]);
 
@@ -96,82 +101,123 @@ export default function DiscoverPage() {
     setSeason("");
     setConfidenceLevel("");
     setLocation("");
-    setSort("new");
+    setSort("trending");
   }
 
-  return (
-    <div className="space-y-5 p-3">
-      <div className="flex items-end justify-between gap-4">
+  function applyFilters() {
+    fetchResults();
+    setFiltersOpen(false);
+  }
+
+  function ResultRow({ p }) {
+    const imgSrc = p.imageUrl
+      ? p.imageUrl.startsWith("http")
+        ? p.imageUrl
+        : `${API_BASE}${p.imageUrl}`
+      : defaultPracticeImg;
+
+    return (
+      <button
+        type="button"
+        onClick={() => navigate(`/app/practices/${p.practiceId}`)}
+        className="w-full text-left hover:bg-slate-50 dark:hover:bg-white/5"
+      >
+        <div className="flex gap-4 p-4">
+          <img
+            src={imgSrc}
+            alt={p.title}
+            className="h-16 w-16 flex-shrink-0 rounded-2xl object-cover"
+          />
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <h3 className="truncate font-heading text-base font-semibold">
+                {p.title}
+              </h3>
+              <span className="text-xs text-slate-500 dark:text-slate-300/70">
+                • by {p.authorName || "Community member"}
+              </span>
+            </div>
+
+            <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-300/80">
+              {p.description}
+            </p>
+
+            <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold">
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
+                Applied: {p.appliedCount ?? 0}
+              </span>
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
+                Reports: {p.totalReports ?? 0}
+              </span>
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
+                Recommended: {p.yesCount ?? 0}
+              </span>
+              <span className="rounded-full bg-emerald-600/15 px-2 py-1 text-emerald-800 dark:text-emerald-200">
+                Score: {p.effectivenessScore ?? "—"}
+              </span>
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
+                {p.confidenceLevel || "LOW"}
+              </span>
+              {p.season && (
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
+                  {p.season}
+                </span>
+              )}
+              {p.location && (
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
+                  {p.location}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </button>
+    );
+  }
+
+  function FiltersPanel() {
+    return (
+      <div className="grid gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-semibold">Discover</h1>
-          <p className="mt-1 text-slate-600 dark:text-slate-300/70">
-            Search and filter practices to find what works best.
-          </p>
+          <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+            Crop
+          </label>
+          <select
+            value={cropTypeId}
+            onChange={(e) => setCropTypeId(e.target.value)}
+            className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+            focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+          >
+            <option value="">All</option>
+            {cropOptions.map((c) => (
+              <option key={c.cropTypeId} value={c.cropTypeId}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchResults}
-          className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-        >
-          Search
-        </button>
-      </div>
+        <div>
+          <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+            Problem
+          </label>
+          <select
+            value={problemTypeId}
+            onChange={(e) => setProblemTypeId(e.target.value)}
+            className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+            focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+          >
+            <option value="">All</option>
+            {problemOptions.map((p) => (
+              <option key={p.problemTypeId} value={p.problemTypeId}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {/* Filters */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <div className="grid gap-3 md:grid-cols-6">
-          <div className="md:col-span-2">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-              Search
-            </label>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="e.g. neem, pesticide, fertilizer..."
-              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-              focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-              Crop
-            </label>
-            <select
-              value={cropTypeId}
-              onChange={(e) => setCropTypeId(e.target.value)}
-              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-              focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-            >
-              <option value="">All</option>
-              {cropOptions.map((c) => (
-                <option key={c.cropTypeId} value={c.cropTypeId}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-              Problem
-            </label>
-            <select
-              value={problemTypeId}
-              onChange={(e) => setProblemTypeId(e.target.value)}
-              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-              focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-            >
-              <option value="">All</option>
-              {problemOptions.map((p) => (
-                <option key={p.problemTypeId} value={p.problemTypeId}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
               Season
@@ -193,36 +239,6 @@ export default function DiscoverPage() {
 
           <div>
             <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-              Sort
-            </label>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-              focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-            >
-              <option value="new">Newest</option>
-              <option value="top">Top effectiveness</option>
-              <option value="recommended">Most recommended</option>
-              <option value="reported">Most reported</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
-              Location
-            </label>
-            <input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Bamenda"
-              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-              focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
               Confidence
             </label>
             <select
@@ -236,6 +252,118 @@ export default function DiscoverPage() {
               <option value="MEDIUM">MEDIUM</option>
               <option value="HIGH">HIGH</option>
             </select>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+              Sort
+            </label>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+              focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+            >
+              <option value="trending">Trending (most applied)</option>
+              <option value="new">Newest</option>
+              <option value="top">Top effectiveness</option>
+              <option value="recommended">Most recommended</option>
+              <option value="reported">Most reported</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+              Location
+            </label>
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. Bamenda"
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+              focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-heading text-2xl font-semibold">Discover</h1>
+        <p className="mt-1 text-slate-600 dark:text-slate-300/70">
+          Trending practices first — then filter to find what fits your context.
+        </p>
+      </div>
+
+      {/* ✅ Mobile: search bar + filter icon */}
+      <div className="md:hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <div className="flex items-center gap-2">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search practices..."
+            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+            focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+          />
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white hover:bg-slate-50
+            dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+            title="Filters"
+          >
+            <SlidersHorizontal className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            onClick={fetchResults}
+            className="w-full rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+          >
+            Search
+          </button>
+
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={() => {
+                clearFilters();
+                setTimeout(fetchResults, 0);
+              }}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
+              dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ✅ Desktop: full filters inline */}
+      <div className="hidden md:block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <div className="grid gap-3 md:grid-cols-6">
+          <div className="md:col-span-2">
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+              Search
+            </label>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="e.g. neem, pesticide, fertilizer..."
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
+              focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+            />
+          </div>
+
+          <div className="md:col-span-4">
+            <FiltersPanel />
           </div>
         </div>
 
@@ -253,7 +381,6 @@ export default function DiscoverPage() {
               type="button"
               onClick={() => {
                 clearFilters();
-                // optional: refresh after clearing
                 setTimeout(fetchResults, 0);
               }}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
@@ -264,6 +391,63 @@ export default function DiscoverPage() {
           )}
         </div>
       </div>
+
+      {/* ✅ Mobile bottom sheet filters */}
+      {filtersOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setFiltersOpen(false)}
+          />
+
+          <div className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0b1220]">
+            <div className="flex items-center justify-between border-b border-slate-200 p-4 dark:border-white/10">
+              <div>
+                <p className="text-xs text-slate-500 dark:text-slate-300/70">
+                  Filters & sorting
+                </p>
+                <p className="font-heading text-lg font-semibold">Refine results</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(false)}
+                className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white hover:bg-slate-50
+                dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                title="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[65vh] overflow-y-auto p-4">
+              <FiltersPanel />
+            </div>
+
+            <div className="flex gap-2 border-t border-slate-200 p-4 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  clearFilters();
+                  setTimeout(fetchResults, 0);
+                  setFiltersOpen(false);
+                }}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
+                dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={applyFilters}
+                className="w-full rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Results */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
@@ -281,70 +465,9 @@ export default function DiscoverPage() {
         )}
 
         <div className="divide-y divide-slate-200 dark:divide-white/10">
-          {items.map((p) => {
-            const imgSrc = p.imageUrl
-              ? p.imageUrl.startsWith("http")
-                ? p.imageUrl
-                : `${API_BASE}${p.imageUrl}`
-              : defaultPracticeImg;
-
-            return (
-              <button
-                key={p.practiceId}
-                type="button"
-                onClick={() => navigate(`/app/practices/${p.practiceId}`)}
-                className="w-full text-left hover:bg-slate-50 dark:hover:bg-white/5"
-              >
-                <div className="flex gap-4 p-4">
-                  <img
-                    src={imgSrc}
-                    alt={p.title}
-                    className="h-16 w-16 flex-shrink-0 rounded-2xl object-cover"
-                  />
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <h3 className="truncate font-heading text-base font-semibold">
-                        {p.title}
-                      </h3>
-                      <span className="text-xs text-slate-500 dark:text-slate-300/70">
-                        • by {p.authorName || "Community member"}
-                      </span>
-                    </div>
-
-                    <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-300/80">
-                      {p.description}
-                    </p>
-
-                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold">
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
-                        Reports: {p.totalReports ?? 0}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
-                        Recommended: {p.yesCount ?? 0}
-                      </span>
-                      <span className="rounded-full bg-emerald-600/15 px-2 py-1 text-emerald-800 dark:text-emerald-200">
-                        Score: {p.effectivenessScore ?? "—"}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
-                        {p.confidenceLevel || "LOW"}
-                      </span>
-                      {p.season && (
-                        <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
-                          {p.season}
-                        </span>
-                      )}
-                      {p.location && (
-                        <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
-                          {p.location}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+          {items.map((p) => (
+            <ResultRow key={p.practiceId} p={p} />
+          ))}
         </div>
       </div>
     </div>

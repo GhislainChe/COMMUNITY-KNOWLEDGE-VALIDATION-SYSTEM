@@ -1,3 +1,4 @@
+// server/routes/discover.routes.js
 const express = require("express");
 const pool = require("../db/pool");
 
@@ -12,7 +13,10 @@ const router = express.Router();
  *  - season
  *  - confidenceLevel
  *  - location
- *  - sort: new | top | recommended | reported
+ *  - sort = trending | new | top | recommended | reported
+ *
+ * NOTE:
+ *  - trending = most applied first, then most reports, then newest
  */
 router.get("/discover/practices", async (req, res) => {
   try {
@@ -23,66 +27,84 @@ router.get("/discover/practices", async (req, res) => {
       season,
       confidenceLevel,
       location,
-      sort = "new",
+      sort = "trending",
     } = req.query;
 
-    const where = ["p.status='ACTIVE'"];
+    const filters = [];
     const params = [];
 
+    // Base filter: only active practices
+    filters.push("p.status = 'ACTIVE'");
+
     if (q && q.trim()) {
-      where.push("(p.title LIKE ? OR p.description LIKE ? OR p.steps LIKE ?)");
+      filters.push("(p.title LIKE ? OR p.description LIKE ? OR p.steps LIKE ?)");
       const like = `%${q.trim()}%`;
       params.push(like, like, like);
     }
 
     if (cropTypeId) {
-      where.push("p.cropTypeId = ?");
+      filters.push("p.cropTypeId = ?");
       params.push(Number(cropTypeId));
     }
 
     if (problemTypeId) {
-      where.push("p.problemTypeId = ?");
+      filters.push("p.problemTypeId = ?");
       params.push(Number(problemTypeId));
     }
 
     if (season && season.trim()) {
-      where.push("p.season = ?");
+      filters.push("p.season = ?");
       params.push(season.trim());
     }
 
     if (confidenceLevel && confidenceLevel.trim()) {
-      where.push("p.confidenceLevel = ?");
+      filters.push("p.confidenceLevel = ?");
       params.push(confidenceLevel.trim());
     }
 
     if (location && location.trim()) {
-      where.push("p.location LIKE ?");
+      filters.push("p.location LIKE ?");
       params.push(`%${location.trim()}%`);
     }
 
-    // Stats: reports + recommendation YES count
-    // NOTE: outcomeReports table name must match yours exactly.
+    // Sorting
     let orderBy = "p.createdAt DESC";
+
+    if (sort === "new") orderBy = "p.createdAt DESC";
     if (sort === "top") orderBy = "p.effectivenessScore DESC, p.createdAt DESC";
     if (sort === "reported") orderBy = "totalReports DESC, p.createdAt DESC";
     if (sort === "recommended") orderBy = "yesCount DESC, p.createdAt DESC";
+
+    // ✅ Trending: most applied first, then most reports, then newest
+    if (sort === "trending")
+      orderBy = "appliedCount DESC, totalReports DESC, p.createdAt DESC";
+
+    const whereSql = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
     const sql = `
       SELECT
         p.practiceId,
         p.title,
         p.description,
-        p.location,
+        p.steps,
+        p.overview,
+        p.materials,
         p.season,
-        p.confidenceLevel,
-        p.effectivenessScore,
+        p.location,
         p.imageUrl,
+        p.effectivenessScore,
+        p.confidenceLevel,
         p.createdAt,
+
         u.fullName AS authorName,
 
-        -- stats
+        -- stats from outcomes
         COALESCE(r.totalReports, 0) AS totalReports,
-        COALESCE(r.yesCount, 0) AS yesCount
+        COALESCE(r.yesCount, 0) AS yesCount,
+
+        -- ✅ stats from applied/bookmarks
+        COALESCE(a.appliedCount, 0) AS appliedCount
+
       FROM practices p
       JOIN users u ON u.userId = p.userId
 
@@ -96,13 +118,25 @@ router.get("/discover/practices", async (req, res) => {
         GROUP BY practiceId
       ) r ON r.practiceId = p.practiceId
 
-      WHERE ${where.join(" AND ")}
+      LEFT JOIN (
+        SELECT
+          practiceId,
+          COUNT(*) AS appliedCount
+        FROM applied_practices
+        GROUP BY practiceId
+      ) a ON a.practiceId = p.practiceId
+
+      ${whereSql}
       ORDER BY ${orderBy}
-      LIMIT 200
+      LIMIT 50
     `;
 
     const [rows] = await pool.query(sql, params);
-    return res.json({ results: rows });
+
+    return res.json({
+      sort,
+      results: rows,
+    });
   } catch (err) {
     console.error("GET /api/discover/practices failed:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
