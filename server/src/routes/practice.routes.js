@@ -38,8 +38,8 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
       materials,
       season,
       location,
-      cropType,
-      problemType,
+      cropTypeId,
+      problemTypeId,
     } = req.body;
 
     if (!title || !description || !steps) {
@@ -53,30 +53,28 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
 
     const [result] = await pool.query(
       `INSERT INTO practices 
-      (userId, title, description, steps, overview, materials, season, location, cropType, problemType, imageUrl)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+   (userId, title, description, steps, overview, materials, season, location, imageUrl, cropTypeId, problemTypeId)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
-        title.trim(),
-        description.trim(),
-        steps.trim(),
-        overview?.trim() || null,
-        materials?.trim() || null,
-        season?.trim() || null,
-        location?.trim() || null,
-        cropType?.trim() || null,
-        problemType?.trim() || null,
-        imageUrl,
+        title,
+        description,
+        steps,
+        overview || null,
+        materials || null,
+        season || null,
+        location || null,
+        imageUrl || null,
+        cropTypeId || null,
+        problemTypeId || null,
       ],
     );
 
-    return res
-      .status(201)
-      .json({
-        message: "Practice created",
-        practiceId: result.insertId,
-        imageUrl,
-      });
+    return res.status(201).json({
+      message: "Practice created",
+      practiceId: result.insertId,
+      imageUrl,
+    });
   } catch (err) {
     return res
       .status(500)
@@ -94,15 +92,25 @@ router.get("/", async (req, res) => {
     const q = req.query.q ? `%${req.query.q}%` : null;
 
     let sql = `
-      SELECT 
-        p.practiceId, p.title, p.description, p.steps,
-        p.effectivenessScore, p.confidenceLevel, p.createdAt,
-        u.fullName AS authorName,
-        p.imageUrl, p.location, p.season
+      SELECT
+        p.practiceId,
+        p.title,
+        p.description,
+        p.steps,
+        p.overview,
+        p.materials,
+        p.season,
+        p.location,
+        p.imageUrl,
+        p.effectivenessScore,
+        p.confidenceLevel,
+        p.createdAt,
+        u.fullName AS authorName
       FROM practices p
       JOIN users u ON u.userId = p.userId
-      WHERE p.status='ACTIVE'
+      WHERE p.status = 'ACTIVE'
     `;
+
     const params = [];
 
     if (q) {
@@ -116,11 +124,10 @@ router.get("/", async (req, res) => {
     return res.json({ practices: rows });
   } catch (err) {
     console.error("GET /api/practices failed:", err);
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
 
 // GET /api/practices/applied
 router.get("/applied", requireAuth, async (req, res) => {

@@ -32,7 +32,7 @@ app.get("/api/me", requireAuth, async (req, res) => {
   return res.json({ message: "You are authenticated", user: req.user });
 });
 
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/practices", practiceRoutes);

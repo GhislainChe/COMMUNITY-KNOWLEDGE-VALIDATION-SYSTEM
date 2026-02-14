@@ -96,7 +96,9 @@ export default function PracticesPage() {
       const res = await api.get("/practices");
 
       // Backend may return an array OR { practices: [...] }
-      const list = Array.isArray(res.data) ? res.data : res.data?.practices || [];
+      const list = Array.isArray(res.data)
+        ? res.data
+        : res.data?.practices || [];
       setPractices(list);
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to load practices.");
@@ -380,7 +382,10 @@ export default function PracticesPage() {
                 </div>
               )}
 
-              <form onSubmit={submitPractice} className="space-y-3 sm:space-y-4">
+              <form
+                onSubmit={submitPractice}
+                className="space-y-3 sm:space-y-4"
+              >
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
@@ -402,12 +407,16 @@ export default function PracticesPage() {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                      onChange={(e) =>
+                        setImageFile(e.target.files?.[0] || null)
+                      }
                       className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
                       focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
                     />
                     <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-300/70">
-                      {imageFile ? `Selected: ${imageFile.name}` : "JPG/PNG/WEBP (max 3MB)"}
+                      {imageFile
+                        ? `Selected: ${imageFile.name}`
+                        : "JPG/PNG/WEBP (max 3MB)"}
                     </p>
                   </div>
                 </div>
@@ -435,8 +444,6 @@ export default function PracticesPage() {
                     <select
                       value={form.cropTypeId}
                       onChange={(e) => setField("cropTypeId", e.target.value)}
-                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                      focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
                     >
                       <option value="">Select crop</option>
                       {cropOptions.map((c) => (
@@ -453,9 +460,9 @@ export default function PracticesPage() {
                     </label>
                     <select
                       value={form.problemTypeId}
-                      onChange={(e) => setField("problemTypeId", e.target.value)}
-                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                      focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                      onChange={(e) =>
+                        setField("problemTypeId", e.target.value)
+                      }
                     >
                       <option value="">Select problem</option>
                       {problemOptions.map((p) => (
@@ -579,9 +586,12 @@ export default function PracticesPage() {
           <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="font-heading text-lg font-bold">Submit outcome</h2>
+                <h2 className="font-heading text-lg font-bold">
+                  Submit outcome
+                </h2>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-                  Practice ID: <span className="font-semibold">{openPracticeId}</span>
+                  Practice ID:{" "}
+                  <span className="font-semibold">{openPracticeId}</span>
                 </p>
               </div>
 
