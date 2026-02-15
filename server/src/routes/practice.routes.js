@@ -128,6 +128,27 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/practices/mine
+router.get("/mine", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const [rows] = await pool.query(
+      `
+      SELECT practiceId, title, description, status, createdAt
+      FROM practices
+      WHERE userId = ?
+      ORDER BY createdAt DESC
+      `,
+      [userId]
+    );
+
+    res.json({ practices: rows });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 
 // GET /api/practices/applied
 router.get("/applied", requireAuth, async (req, res) => {
@@ -358,5 +379,36 @@ router.post("/:id/apply", requireAuth, async (req, res) => {
     });
   }
 });
+
+
+// DELETE /api/practices/:id
+router.delete("/:id", requireAuth, async (req, res) => {
+  try {
+    const practiceId = Number(req.params.id);
+    const userId = req.user.userId;
+
+    const [rows] = await pool.query(
+      "SELECT userId FROM practices WHERE practiceId = ?",
+      [practiceId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Practice not found" });
+    }
+
+    if (rows[0].userId !== userId) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    await pool.query("DELETE FROM practices WHERE practiceId = ?", [
+      practiceId,
+    ]);
+
+    res.json({ message: "Practice deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 
 module.exports = router;

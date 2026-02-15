@@ -4,10 +4,10 @@ import { api } from "../../api/api";
 import {
   LogOut,
   User,
-  ShieldCheck,
-  MessageSquareText,
   Bookmark,
-  Star,
+  MessageSquareText,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -21,49 +21,34 @@ export default function ProfilePage() {
     }
   }, []);
 
-  const [me, setMe] = useState(null); // optional: from /api/me if you want
   const [loading, setLoading] = useState(true);
-
   const [appliedCount, setAppliedCount] = useState(0);
   const [threadsCount, setThreadsCount] = useState(0);
-
-  const [error, setError] = useState("");
+  const [myPractices, setMyPractices] = useState([]);
 
   useEffect(() => {
     async function load() {
       try {
-        setLoading(true);
-        setError("");
-
-        // if no user in localStorage, redirect
         if (!user) {
           navigate("/login", { replace: true });
           return;
         }
 
-        // Optional: confirm auth
-        // /api/me exists in your backend
-        const meRes = await api.get("/me");
-        setMe(meRes.data?.user || null);
-
-        // Applied practices count
+        // Bookmarks
         const appliedRes = await api.get("/practices/applied");
-        const applied =
-          (Array.isArray(appliedRes.data) && appliedRes.data) ||
-          appliedRes.data?.applied ||
-          [];
-        setAppliedCount(Array.isArray(applied) ? applied.length : 0);
+        const applied = appliedRes.data?.applied || [];
+        setAppliedCount(applied.length);
 
-        // My discussions threads count (you built /discussions/mine)
+        // Discussions
         const threadsRes = await api.get("/discussions/mine");
-        const threads =
-          (Array.isArray(threadsRes.data) && threadsRes.data) ||
-          threadsRes.data?.threads ||
-          threadsRes.data?.results ||
-          [];
-        setThreadsCount(Array.isArray(threads) ? threads.length : 0);
+        const threads = threadsRes.data?.threads || [];
+        setThreadsCount(threads.length);
+
+        // My Practices
+        const mineRes = await api.get("/practices/mine");
+        setMyPractices(mineRes.data?.practices || []);
       } catch (err) {
-        setError(err?.response?.data?.message || "Failed to load profile.");
+        console.log(err);
       } finally {
         setLoading(false);
       }
@@ -78,140 +63,107 @@ export default function ProfilePage() {
     navigate("/login", { replace: true });
   }
 
-  if (loading) return <p className="text-slate-500 p-3">Loading profile...</p>;
-  if (error) return <p className="text-red-600 p-3">{error}</p>;
+  async function handleDelete(id) {
+    if (!window.confirm("Are you sure you want to delete this practice?"))
+      return;
 
-  // Prefer local user object, fallback to /me
-  const fullName = user?.fullName || me?.fullName || "User";
-  const email = user?.email || me?.email || "";
-  const role = user?.userRole || me?.userRole || "USER";
-  const credibilityScore =
-    user?.credibilityScore ?? me?.credibilityScore ?? 0;
+    try {
+      await api.delete(`/practices/${id}`);
+      setMyPractices((prev) =>
+        prev.filter((p) => p.practiceId !== id)
+      );
+    } catch (err) {
+      alert("Failed to delete.");
+    }
+  }
+
+  if (loading) return <p className="p-4 text-slate-500">Loading...</p>;
 
   return (
-    <div className="p-3 sm:p-4 space-y-4">
-      {/* Header */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/10">
-              <User className="h-6 w-6" />
-            </div>
-
-            <div>
-              <h1 className="font-heading text-xl font-bold">{fullName}</h1>
-              {email && (
-                <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300/70">
-                  {email}
-                </p>
-              )}
-
-              <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-slate-700 dark:bg-white/10 dark:text-slate-100">
-                  <ShieldCheck className="h-4 w-4" />
-                  Role: {role}
-                </span>
-
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600/15 px-3 py-1 text-emerald-800 dark:text-emerald-200">
-                  <Star className="h-4 w-4" />
-                  Credibility: {Number(credibilityScore).toFixed(0)}
-                </span>
-              </div>
-            </div>
+    <div className="p-4 space-y-6">
+      {/* PROFILE HEADER */}
+      <div className="rounded-3xl border p-6 bg-white dark:bg-white/5">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold">{user?.fullName}</h1>
+            <p className="text-sm text-slate-500">{user?.email}</p>
           </div>
 
           <button
             onClick={logout}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border"
           >
-            <LogOut className="h-4 w-4" />
-            Log out
+            <LogOut size={16} />
+            Logout
           </button>
         </div>
       </div>
 
-      {/* Quick stats */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <button
-          type="button"
-          onClick={() => navigate("/app/bookmarks")}
-          className="rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-        >
-          <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-            <Bookmark className="h-5 w-5" />
-            <p className="font-semibold">Bookmarks</p>
+      {/* QUICK STATS */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="rounded-2xl border p-4 bg-white dark:bg-white/5">
+          <div className="flex items-center gap-2 font-semibold">
+            <Bookmark size={18} />
+            Bookmarks
           </div>
-          <p className="mt-2 text-2xl font-extrabold">{appliedCount}</p>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-            Practices you applied.
-          </p>
-        </button>
+          <p className="text-2xl font-bold mt-2">{appliedCount}</p>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => navigate("/app/discussions")}
-          className="rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-        >
-          <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-            <MessageSquareText className="h-5 w-5" />
-            <p className="font-semibold">Discussions</p>
+        <div className="rounded-2xl border p-4 bg-white dark:bg-white/5">
+          <div className="flex items-center gap-2 font-semibold">
+            <MessageSquareText size={18} />
+            Discussions
           </div>
-          <p className="mt-2 text-2xl font-extrabold">{threadsCount}</p>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-            Threads you participated in.
-          </p>
-        </button>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm dark:border-white/10 dark:bg-white/5">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Account
-          </p>
-          <div className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300/70">
-            <p>
-              <span className="font-semibold text-slate-800 dark:text-white">
-                Status:
-              </span>{" "}
-              Active
-            </p>
-            <p>
-              <span className="font-semibold text-slate-800 dark:text-white">
-                Security:
-              </span>{" "}
-              JWT Authentication
-            </p>
-            <p>
-              <span className="font-semibold text-slate-800 dark:text-white">
-                Tip:
-              </span>{" "}
-              Keep submitting outcomes to improve credibility.
-            </p>
-          </div>
+          <p className="text-2xl font-bold mt-2">{threadsCount}</p>
         </div>
       </div>
 
-      {/* Profile actions */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <h2 className="font-heading text-lg font-bold">Profile Actions</h2>
+      {/* MY CREATED PRACTICES */}
+      <div className="rounded-3xl border p-6 bg-white dark:bg-white/5">
+        <h2 className="text-lg font-bold mb-4">
+          My Created Practices ({myPractices.length})
+        </h2>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <button
-            onClick={() => navigate("/app/bookmarks")}
-            className="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
-          >
-            View Bookmarks
-          </button>
+        {myPractices.length === 0 && (
+          <p className="text-slate-500">You have not created any practice yet.</p>
+        )}
 
-          <button
-            onClick={() => navigate("/app/discussions")}
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-          >
-            Open Discussions
-          </button>
+        <div className="space-y-3">
+          {myPractices.map((p) => (
+            <div
+              key={p.practiceId}
+              className="border rounded-2xl p-4 flex justify-between items-start"
+            >
+              <div>
+                <h3 className="font-semibold">{p.title}</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  {p.description?.slice(0, 100)}...
+                </p>
+                <p className="text-xs mt-1 text-slate-400">
+                  Status: {p.status}
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() =>
+                    navigate(`/app/practices/${p.practiceId}`)
+                  }
+                  className="p-2 rounded-xl border hover:bg-slate-50"
+                >
+                  <Pencil size={16} />
+                </button>
+
+                <button
+                  onClick={() => handleDelete(p.practiceId)}
+                  className="p-2 rounded-xl border text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
-
-        <p className="mt-3 text-xs text-slate-500 dark:text-slate-300/70">
-          Next upgrade (optional): edit profile (name, location) + change password.
-        </p>
       </div>
     </div>
   );
