@@ -78,7 +78,7 @@ export default function AboutPage() {
     <div className="p-3 sm:p-4">
       {/* HERO */}
       <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5 sm:p-7">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-column sm:items-start sm:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
               About the System
