@@ -11,6 +11,10 @@ import {
   LogOut,
   Plus,
   ArrowRight,
+  Pencil,
+  X,
+  Mail,
+  User as UserIcon,
 } from "lucide-react";
 
 const API_BASE = "http://localhost:5000";
@@ -37,30 +41,36 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ✅ Edit modal state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editErr, setEditErr] = useState("");
+  const [editMsg, setEditMsg] = useState("");
+  const [editForm, setEditForm] = useState({ fullName: "", email: "" });
+
   async function loadProfile() {
     try {
       setLoading(true);
       setError("");
 
-      // 1) Me
-      const meRes = await api.get("/me"); // from your index.js
+      // ✅ 1) Real user from DB (includes fullName, email, credibilityScore)
+      const meRes = await api.get("/users/me");
       const u = meRes.data?.user || null;
       setMe(u);
 
       // 2) My created practices
-      // IMPORTANT: this requires backend route GET /api/practices/mine
       const mineRes = await api.get("/practices/mine");
       const myList = mineRes.data?.practices || [];
       setCreated(myList);
 
       // 3) Bookmarks count (applied)
       const appliedRes = await api.get("/practices/applied");
-      const appliedList = appliedRes.data?.applied || [];
+      const appliedList = Array.isArray(appliedRes.data)
+        ? appliedRes.data
+        : appliedRes.data?.applied || appliedRes.data?.practices || [];
       setBookmarksCount(appliedList.length);
 
-      // 4) Discussions count (if you have route; if not, it stays 0)
-      // If you already have /api/discussions/mine, great.
-      // If not, we silently ignore.
+      // 4) Discussions count (optional)
       try {
         const dRes = await api.get("/discussions/mine");
         const dList = dRes.data?.discussions || dRes.data?.results || [];
@@ -79,16 +89,71 @@ export default function ProfilePage() {
     loadProfile();
   }, []);
 
+  // ✅ Credibility: support both 0–1 and 0–100 values
   const credibility = useMemo(() => {
     const raw = Number(me?.credibilityScore ?? 0);
-    return clamp(raw, 0, 100);
+    const percent = raw <= 1 ? raw * 100 : raw;
+    return clamp(percent, 0, 100);
   }, [me]);
 
   const cred = useMemo(() => scoreLabel(credibility), [credibility]);
 
   const fullName = me?.fullName || "User";
-  const email = me?.email || me?.userEmail || "";
+  const email = me?.email || "";
   const role = me?.userRole || "USER";
+
+  function openEdit() {
+    setEditErr("");
+    setEditMsg("");
+    setEditLoading(false);
+    setEditForm({
+      fullName: me?.fullName || "",
+      email: me?.email || "",
+    });
+    setEditOpen(true);
+  }
+
+  function closeEdit() {
+    if (editLoading) return;
+    setEditOpen(false);
+  }
+
+  async function submitEdit(e) {
+    e.preventDefault();
+    setEditErr("");
+    setEditMsg("");
+
+    if (!editForm.fullName.trim()) {
+      setEditErr("Full name is required.");
+      return;
+    }
+    if (!editForm.email.trim()) {
+      setEditErr("Email is required.");
+      return;
+    }
+
+    try {
+      setEditLoading(true);
+
+      const res = await api.patch("/users/me", {
+        fullName: editForm.fullName.trim(),
+        email: editForm.email.trim(),
+      });
+
+      const updated = res.data?.user || null;
+      setMe(updated);
+      setEditMsg("Profile updated successfully ✅");
+
+      // close after small delay
+      setTimeout(() => {
+        setEditOpen(false);
+      }, 600);
+    } catch (err) {
+      setEditErr(err?.response?.data?.message || "Failed to update profile.");
+    } finally {
+      setEditLoading(false);
+    }
+  }
 
   if (loading) return <p className="p-3 text-slate-500">Loading profile...</p>;
   if (error) return <p className="p-3 text-red-600">{error}</p>;
@@ -129,12 +194,21 @@ export default function ProfilePage() {
                 }`}
               >
                 <ShieldCheck className="h-4 w-4" />
-                Credibility: {credibility}/100 • {cred.label}
+                Credibility: {credibility.toFixed(0)}/100 • {cred.label}
               </span>
             </div>
           </div>
 
-          <div className="flex gap-2 sm:justify-end">
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            <button
+              onClick={openEdit}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+              title="Edit profile"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </button>
+
             <button
               onClick={() => navigate("/app/practices")}
               className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
@@ -301,6 +375,110 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* ✅ EDIT PROFILE MODAL */}
+      {editOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={closeEdit}
+          />
+
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-4 dark:border-white/10">
+              <div>
+                <h2 className="font-heading text-lg font-bold">Edit profile</h2>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
+                  Update your name and email.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeEdit}
+                className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white hover:bg-slate-50
+                dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                title="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[75vh] overflow-y-auto p-4">
+              {editErr && (
+                <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+                  {editErr}
+                </div>
+              )}
+              {editMsg && (
+                <div className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
+                  {editMsg}
+                </div>
+              )}
+
+              <form onSubmit={submitEdit} className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Full name
+                  </label>
+                  <div className="mt-1 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-white/5">
+                    <UserIcon className="h-4 w-4 text-slate-500 dark:text-slate-300/70" />
+                    <input
+                      value={editForm.fullName}
+                      onChange={(e) =>
+                        setEditForm((p) => ({ ...p, fullName: e.target.value }))
+                      }
+                      className="w-full bg-transparent text-sm outline-none"
+                      placeholder="Your full name"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
+                    Email
+                  </label>
+                  <div className="mt-1 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-white/5">
+                    <Mail className="h-4 w-4 text-slate-500 dark:text-slate-300/70" />
+                    <input
+                      value={editForm.email}
+                      onChange={(e) =>
+                        setEditForm((p) => ({ ...p, email: e.target.value }))
+                      }
+                      className="w-full bg-transparent text-sm outline-none"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={closeEdit}
+                    disabled={editLoading}
+                    className="w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
+                    disabled:opacity-70 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editLoading}
+                    className="w-full sm:w-auto rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
+                  >
+                    {editLoading ? "Saving..." : "Save changes"}
+                  </button>
+                </div>
+              </form>
+
+              <p className="mt-4 text-[11px] text-slate-500 dark:text-slate-300/70">
+                Note: If you want password change later, we’ll add a separate secure
+                endpoint.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
