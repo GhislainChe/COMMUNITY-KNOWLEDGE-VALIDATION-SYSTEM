@@ -5,6 +5,7 @@ const { requireAuth } = require("./middleware/auth");
 const practiceRoutes = require("./routes/practice.routes");
 const pool = require("./db/pool");
 const authRoutes = require("./routes/auth.routes");
+const userRoutes = require("./routes/users.routes");
 const outcomeRoutes = require("./routes/outcome.routes");
 const commentRoutes = require("./routes/comment.routes");
 const discussionsRoutes = require("./routes/discussions.routes");
@@ -36,6 +37,7 @@ app.get("/api/me", requireAuth, async (req, res) => {
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/practices", practiceRoutes);
 app.use("/api", outcomeRoutes);
 app.use("/api", commentRoutes);
