@@ -3,6 +3,7 @@ import { api } from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import defaultPracticeImg from "../../assets/practice-default.jpg";
 import { SlidersHorizontal, X } from "lucide-react";
+import ProfileSkeleton from "../../components/UIskeletons/ProfileSkeleton";
 
 const API_BASE = "http://localhost:5000";
 const PAGE_SIZE = 10;
@@ -127,7 +128,9 @@ export default function DiscoverPage() {
 
       setPage(nextPage);
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to load discover results.");
+      setError(
+        err?.response?.data?.message || "Failed to load discover results.",
+      );
     } finally {
       setLoading(false);
       fetchingMoreRef.current = false;
@@ -170,7 +173,7 @@ export default function DiscoverPage() {
 
         fetchResults({ reset: false, nextPage: page + 1 });
       },
-      { root: null, threshold: 0.3 }
+      { root: null, threshold: 0.3 },
     );
 
     obs.observe(el);
@@ -517,7 +520,9 @@ export default function DiscoverPage() {
                 <p className="text-xs text-slate-500 dark:text-slate-300/70">
                   Filters
                 </p>
-                <p className="font-heading text-lg font-semibold">Refine results</p>
+                <p className="font-heading text-lg font-semibold">
+                  Refine results
+                </p>
               </div>
 
               <button
@@ -563,10 +568,11 @@ export default function DiscoverPage() {
       {/* Results */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
         <div className="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 dark:border-white/10 dark:text-slate-200">
-          Results ({items.length}{tab !== "forYou" ? ` / ${meta.total}` : ""})
+          Results ({items.length}
+          {tab !== "forYou" ? ` / ${meta.total}` : ""})
         </div>
 
-        {loading && items.length === 0 && <p className="p-4 text-slate-500">Loading...</p>}
+        {loading && <ProfileSkeleton count={6} />}
         {error && <p className="p-4 text-red-600">{error}</p>}
 
         {!loading && !error && items.length === 0 && (
@@ -586,7 +592,9 @@ export default function DiscoverPage() {
 
         {/* Loading more indicator */}
         {loading && items.length > 0 && (
-          <p className="p-4 text-center text-sm text-slate-500">Loading more…</p>
+          <p className="p-4 text-center text-sm text-slate-500">
+            Loading more…
+          </p>
         )}
 
         {!loading && tab !== "forYou" && !meta.hasMore && items.length > 0 && (

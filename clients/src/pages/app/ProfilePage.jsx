@@ -16,6 +16,7 @@ import {
   Mail,
   User as UserIcon,
 } from "lucide-react";
+import ProfileSkeleton from "../../components/UIskeletons/ProfileSkeleton"
 
 const API_BASE = "http://localhost:5000";
 
@@ -155,7 +156,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading) return <p className="p-3 text-slate-500">Loading profile...</p>;
+  if (loading) return <ProfileSkeleton />;
   if (error) return <p className="p-3 text-red-600">{error}</p>;
 
   return (
@@ -189,8 +190,8 @@ export default function ProfilePage() {
                   cred.tone === "emerald"
                     ? "bg-emerald-600/15 text-emerald-800 dark:text-emerald-200"
                     : cred.tone === "amber"
-                    ? "bg-amber-500/15 text-amber-800 dark:text-amber-200"
-                    : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-100"
+                      ? "bg-amber-500/15 text-amber-800 dark:text-amber-200"
+                      : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-100"
                 }`}
               >
                 <ShieldCheck className="h-4 w-4" />
@@ -472,8 +473,8 @@ export default function ProfilePage() {
               </form>
 
               <p className="mt-4 text-[11px] text-slate-500 dark:text-slate-300/70">
-                Note: If you want password change later, we’ll add a separate secure
-                endpoint.
+                Note: If you want password change later, we’ll add a separate
+                secure endpoint.
               </p>
             </div>
           </div>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import PracticesGridSkeleton from "../../components/UIskeletons/PracticesGridSkeleton";
 
 // ✅ Put a default image in: clients/src/assets/practice-default.jpg
 import defaultPracticeImg from "../../assets/practice-default.jpg";
@@ -242,9 +243,9 @@ export default function PracticesPage() {
     } finally {
       setAddLoading(false);
     }
-  }
+  }1
 
-  if (loading) return <p className="text-slate-500">Loading practices...</p>;
+  if (loading) return <PracticesGridSkeleton count={6} />;
   if (error) return <p className="text-red-600">{error}</p>;
 
   return (
