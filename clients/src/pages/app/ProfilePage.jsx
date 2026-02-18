@@ -42,7 +42,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ Edit modal state
+  // Edit modal state
   const [editOpen, setEditOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editErr, setEditErr] = useState("");
@@ -54,7 +54,7 @@ export default function ProfilePage() {
       setLoading(true);
       setError("");
 
-      // ✅ 1) Real user from DB (includes fullName, email, credibilityScore)
+      // Real user from DB (includes fullName, email, credibilityScore)
       const meRes = await api.get("/users/me");
       const u = meRes.data?.user || null;
       setMe(u);
@@ -90,7 +90,7 @@ export default function ProfilePage() {
     loadProfile();
   }, []);
 
-  // ✅ Credibility: support both 0–1 and 0–100 values
+  // Credibility: support both 0–1 and 0–100 values
   const credibility = useMemo(() => {
     const raw = Number(me?.credibilityScore ?? 0);
     const percent = raw <= 1 ? raw * 100 : raw;
@@ -143,7 +143,7 @@ export default function ProfilePage() {
 
       const updated = res.data?.user || null;
       setMe(updated);
-      setEditMsg("Profile updated successfully ✅");
+      setEditMsg("Profile updated successfully ");
 
       // close after small delay
       setTimeout(() => {
