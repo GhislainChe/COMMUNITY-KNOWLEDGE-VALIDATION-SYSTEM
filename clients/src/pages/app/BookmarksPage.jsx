@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api/api";
 import { useNavigate } from "react-router-dom";
+import ProfileSkeleton from "../../components/UIskeletons/ProfileSkeleton";
+import DiscoverListSkeleton from "../../components/UIskeletons/ProfileSkeleton";
 
 export default function BookmarksPage() {
   const navigate = useNavigate();
@@ -27,8 +29,18 @@ export default function BookmarksPage() {
     loadApplied();
   }, []);
 
-  if (loading) return <p className="text-slate-500">Loading bookmarks...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (loading) return <DiscoverListSkeleton count={6} />;
+  if (error)
+    return (
+      <div className="flex items-end justify-between gap-4">
+        <div className="space-y-2 p-3">
+          <h1 className="font-heading text-2xl font-semibold">Bookmarks</h1>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
+            Error getting your bookmarks<b> Check your internet connection and try again</b>.
+          </div>
+        </div>
+      </div>
+    );
 
   return (
     <div className="space-y-6 p-3">
@@ -99,7 +111,9 @@ export default function BookmarksPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        navigate(`/app/practices?submitOutcomeFor=${it.practiceId}&from=bookmarks`)
+                        navigate(
+                          `/app/practices?submitOutcomeFor=${it.practiceId}&from=bookmarks`,
+                        )
                       }
                       className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                     >
