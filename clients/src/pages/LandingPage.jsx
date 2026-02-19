@@ -6,7 +6,7 @@ import {
   Search,
   MessageSquareText,
 } from "lucide-react";
-import heroImg from "../assets/hero.jpg"; // <-- add your image here
+import heroImg from "../assets/hero.jpg";
 import { Navigate } from "react-router-dom";
 import { isAuthenticated } from "../utils/auth";
 
