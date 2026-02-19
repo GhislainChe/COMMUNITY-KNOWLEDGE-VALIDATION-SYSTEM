@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { api } from "../../api/api";
+import DiscoverListSkeleton from "../../components/UIskeletons/ProfileSkeleton";
 
 export default function DiscussionsPage() {
   const [searchParams] = useSearchParams();
@@ -196,6 +197,19 @@ export default function DiscussionsPage() {
     }
   }
 
+  if (loadingList) return <DiscoverListSkeleton count={6} />;
+  if (errorList)
+    return (
+      <div className="flex items-end justify-between gap-4">
+        <div className="space-y-2 p-3">
+          <h1 className="font-heading text-2xl font-semibold">Discussions</h1>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
+            Error getting your discussions<b> Check your internet connection and try again</b>.
+          </div>
+        </div>
+      </div>
+    );
+
   // ===== UI =====
 
   // List mode (no practiceId)
@@ -208,18 +222,7 @@ export default function DiscussionsPage() {
         </p>
 
         <div className="mt-4 ">
-          {loadingList && (
-            <p className="text-slate-500">Loading discussions...</p>
-          )}
-
-          {errorList && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
-              {errorList}
-              <div className="mt-2 text-sm text-slate-500 dark:text-slate-300/70">
-                For now: open a practice and click <b>Comments</b>.
-              </div>
-            </div>
-          )}
+          
 
           {!loadingList && !errorList && threads.length === 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">

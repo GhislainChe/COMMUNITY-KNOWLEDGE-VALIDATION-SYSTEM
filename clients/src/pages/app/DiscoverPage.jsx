@@ -573,7 +573,7 @@ export default function DiscoverPage() {
         </div>
 
         {loading && <ProfileSkeleton count={6} />}
-        {error && <p className="p-4 text-red-600">{error}</p>}
+        {error && <p className="p-4 text-red-600">check your internet connection and try again</p>}
 
         {!loading && !error && items.length === 0 && (
           <p className="p-4 text-slate-600 dark:text-slate-300/70">

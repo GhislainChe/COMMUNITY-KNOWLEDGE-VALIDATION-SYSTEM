@@ -246,7 +246,17 @@ export default function PracticesPage() {
   }1
 
   if (loading) return <PracticesGridSkeleton count={6} />;
-  if (error) return <p className="text-red-600">{error}</p>;
+    if (error)
+      return (
+        <div className="flex items-end justify-between gap-4">
+          <div className="space-y-2 p-3">
+            <h1 className="font-heading text-2xl font-semibold">Practices</h1>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
+              Error getting practices<b> Check your internet connection and try again</b>.
+            </div>
+          </div>
+        </div>
+      );
 
   return (
     <div className="text-slate-900 dark:text-slate-100 p-3">
