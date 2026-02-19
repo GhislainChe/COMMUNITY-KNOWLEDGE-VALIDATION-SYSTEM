@@ -9,6 +9,7 @@ import {
   Sun,
   Moon,
   Bookmark,
+  Gavel,
 } from "lucide-react";
 import { logout } from "../utils/auth";
 import { getTheme, toggleTheme, applyTheme } from "../utils/theme";
@@ -40,6 +41,12 @@ export default function AppLayout() {
     }
   }, []);
 
+  const isModerator = useMemo(() => {
+    const role =
+      user?.userRole || user?.role || user?.user?.userRole || user?.user?.role;
+    return role === "MODERATOR" || role === "ADMIN";
+  }, [user]);
+
   // Determine current tab title from route
   const currentTab = useMemo(() => {
     const path = location.pathname;
@@ -48,6 +55,7 @@ export default function AppLayout() {
     if (path.includes("/app/bookmarks")) return "Bookmarks";
     if (path.includes("/app/discover")) return "Discover";
     if (path.includes("/app/discussions")) return "Discussions";
+    if (path.includes("/app/moderator")) return "Moderator";
     if (path.includes("/app/about")) return "About";
     if (path.includes("/app/profile")) return "Profile";
 
@@ -72,7 +80,7 @@ export default function AppLayout() {
               <span className="font-brand font-semibold">CKVS</span>
             </div>
 
-            {/* Tab title (starts after sidebar width visually) */}
+            {/* Tab title (optional) */}
             {/* <div className="hidden md:block">
               <span className="text-sm text-slate-400">/</span>{" "}
               <span className="font-heading text-lg font-semibold">
@@ -215,6 +223,18 @@ export default function AppLayout() {
                   <MessageSquareText className="h-5 w-5" /> Discussions
                 </NavLink>
 
+                {isModerator && (
+                  <NavLink
+                    to="moderator"
+                    onClick={() => setMobileNavOpen(false)}
+                    className={({ isActive }) =>
+                      `${linkBase} ${isActive ? linkActive : linkInactive}`
+                    }
+                  >
+                    <Gavel className="h-5 w-5" /> Moderator
+                  </NavLink>
+                )}
+
                 <NavLink
                   to="about"
                   onClick={() => setMobileNavOpen(false)}
@@ -299,6 +319,18 @@ export default function AppLayout() {
               <MessageSquareText className="h-5 w-5" />
               Discussions
             </NavLink>
+
+            {isModerator && (
+              <NavLink
+                to="moderator"
+                className={({ isActive }) =>
+                  `${linkBase} ${isActive ? linkActive : linkInactive}`
+                }
+              >
+                <Gavel className="h-5 w-5" />
+                Moderator
+              </NavLink>
+            )}
 
             <NavLink
               to="about"

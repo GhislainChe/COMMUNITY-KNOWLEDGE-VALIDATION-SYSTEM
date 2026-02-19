@@ -6,7 +6,9 @@ const router = express.Router();
 
 /**
  * POST /api/flags
- * User reports a practice / outcome / comment.
+ * User reports a practice / outcome / comment / discussion.
+ *
+ * body: { targetType, targetId, reason, details? }
  */
 router.post("/flags", requireAuth, async (req, res) => {
   try {
@@ -14,14 +16,19 @@ router.post("/flags", requireAuth, async (req, res) => {
     const { targetType, targetId, reason, details } = req.body;
 
     if (!targetType || !targetId || !reason) {
-      return res.status(400).json({ message: "targetType, targetId and reason are required" });
+      return res.status(400).json({
+        message: "targetType, targetId and reason are required",
+      });
     }
 
-    if (!["PRACTICE", "OUTCOME", "COMMENT"].includes(targetType)) {
+    // ✅ Added DISCUSSION now (future-proof)
+    const allowedTypes = ["PRACTICE", "OUTCOME", "COMMENT", "DISCUSSION"];
+    if (!allowedTypes.includes(targetType)) {
       return res.status(400).json({ message: "Invalid targetType" });
     }
 
-    if (!["SPAM", "FALSE_INFO", "ABUSIVE", "OTHER"].includes(reason)) {
+    const allowedReasons = ["SPAM", "FALSE_INFO", "ABUSIVE", "OTHER"];
+    if (!allowedReasons.includes(reason)) {
       return res.status(400).json({ message: "Invalid reason" });
     }
 
@@ -30,22 +37,34 @@ router.post("/flags", requireAuth, async (req, res) => {
       return res.status(400).json({ message: "Invalid targetId" });
     }
 
-    // Optional: prevent reporting same item multiple times by same user
+    // Optional: limit details length (avoid huge payloads)
+    const safeDetails =
+      typeof details === "string" ? details.trim().slice(0, 500) : null;
+
+    // Prevent reporting same item multiple times by same user (pending)
     const [existing] = await pool.query(
-      "SELECT flagId FROM flags WHERE reporterUserId=? AND targetType=? AND targetId=? AND status='PENDING'",
+      `SELECT flagId
+       FROM flags
+       WHERE reporterUserId=? AND targetType=? AND targetId=? AND status='PENDING'`,
       [reporterUserId, targetType, id]
     );
+
     if (existing.length > 0) {
-      return res.status(409).json({ message: "You already reported this item (pending review)" });
+      return res
+        .status(409)
+        .json({ message: "You already reported this item (pending review)" });
     }
 
     const [result] = await pool.query(
       `INSERT INTO flags (reporterUserId, targetType, targetId, reason, details)
        VALUES (?, ?, ?, ?, ?)`,
-      [reporterUserId, targetType, id, reason, details || null]
+      [reporterUserId, targetType, id, reason, safeDetails]
     );
 
-    return res.status(201).json({ message: "Report submitted", flagId: result.insertId });
+    return res.status(201).json({
+      message: "Report submitted",
+      flagId: result.insertId,
+    });
   } catch (err) {
     return res.status(500).json({ message: "Server error", error: err.message });
   }
