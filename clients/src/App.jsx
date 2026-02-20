@@ -4,7 +4,6 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import PracticeDetailsPage from "./pages/app/PracticeDetailsPage";
 
-
 import AppLayout from "./layouts/AppLayout";
 import PracticesPage from "./pages/app/PracticesPage";
 import BookmarksPage from "./pages/app/BookmarksPage";
@@ -12,29 +11,7 @@ import DiscoverPage from "./pages/app/DiscoverPage";
 import DiscussionsPage from "./pages/app/DiscussionsPage";
 import AboutPage from "./pages/app/AboutPage";
 import ProfilePage from "./pages/app/ProfilePage";
-
-// function AppHomePlaceholder() {
-//   return (
-//     <div className="min-h-screen bg-slate-50 p-10 text-slate-900">
-//       <h1 className="text-2xl font-semibold">App Home (Practices) — coming next</h1>
-//       <p className="mt-2 text-slate-600">
-//         After we build route protection and sidebar layout, this becomes the Practices page.
-//       </p>
-//     </div>
-//   );
-// }
-
-// function AppPlaceholder() {
-//   return (
-//     <div className="min-h-screen bg-slate-50 p-10">
-//       <h1 className="text-2xl font-semibold">Welcome to CKVS App ✅</h1>
-//       <p className="mt-2 text-slate-600">
-//         Next we will build the sidebar layout and real pages.
-//       </p>
-//     </div>
-//   );
-// }
-
+import ModeratorPage from "./pages/app/ModeratorPage";
 
 export default function App() {
   return (
@@ -55,6 +32,9 @@ export default function App() {
         <Route path="discussions" element={<DiscussionsPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="profile" element={<ProfilePage />} />
+
+        <Route path="moderator" element={<ModeratorPage />} />
+        
       </Route>
 
       {/* Fallback */}
@@ -62,6 +42,3 @@ export default function App() {
     </Routes>
   );
 }
-
-
-
