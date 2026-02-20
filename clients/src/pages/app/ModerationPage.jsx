@@ -194,7 +194,7 @@ export default function ModerationPage() {
 
         {flags.length === 0 ? (
           <div className="p-4 text-sm text-slate-600 dark:text-slate-300/80">
-            No pending reports 🎉
+            No pending reports
           </div>
         ) : (
           <div className="divide-y divide-slate-200 dark:divide-white/10">

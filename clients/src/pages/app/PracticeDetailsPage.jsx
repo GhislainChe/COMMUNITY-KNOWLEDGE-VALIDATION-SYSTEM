@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api/api";
 import defaultPracticeImg from "../../assets/practice-default.jpg";
+import { Flag } from "lucide-react";
+import ReportModal from "../../components/ReportModal";
 
 export default function PracticeDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [reportOpen, setReportOpen] = useState(false);
 
   const practiceId = Number(id);
 
@@ -28,7 +31,7 @@ export default function PracticeDetailsPage() {
       ineffective: stats?.ineffective ?? 0,
       recommendedRate: stats?.recommendedRate ?? 0,
     }),
-    [stats]
+    [stats],
   );
 
   useEffect(() => {
@@ -59,8 +62,9 @@ export default function PracticeDetailsPage() {
           : appliedRes.data?.applied || appliedRes.data?.practices || [];
 
         const alreadyApplied = appliedList.some((p) => {
-          const pid =
-            Number(p.practiceId ?? p.id ?? p.practice_id ?? p.practiceID);
+          const pid = Number(
+            p.practiceId ?? p.id ?? p.practice_id ?? p.practiceID,
+          );
           return pid === practiceId;
         });
 
@@ -99,12 +103,11 @@ export default function PracticeDetailsPage() {
   if (error) return <p className="text-red-600">{error}</p>;
   if (!practice) return <p className="text-slate-500">Practice not found.</p>;
 
- const imgSrc = practice.imageUrl
-  ? practice.imageUrl.startsWith("http")
-    ? practice.imageUrl
-    : `http://localhost:5000${practice.imageUrl}`
-  : defaultPracticeImg;
-
+  const imgSrc = practice.imageUrl
+    ? practice.imageUrl.startsWith("http")
+      ? practice.imageUrl
+      : `http://localhost:5000${practice.imageUrl}`
+    : defaultPracticeImg;
 
   return (
     <div className="mx-auto w-full max-w-1xl p-0 sm:p-4 md:p-6">
@@ -196,6 +199,13 @@ export default function PracticeDetailsPage() {
               >
                 Comments
               </button>
+              <button
+                onClick={() => setReportOpen(true)}
+                className="rounded-2xl bg-white/15 px-3 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20 sm:w-auto inline-flex items-center gap-2"
+              >
+                <Flag className="h-4 w-4" />
+                Report
+              </button>
             </div>
 
             {/* Apply message */}
@@ -275,6 +285,14 @@ export default function PracticeDetailsPage() {
             </p>
           </div>
         </div>
+        <ReportModal
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          targetType="PRACTICE"
+          targetId={practiceId}
+          title="Report this practice"
+          subtitle="If it’s spam or misleading, report it so moderators can review."
+        />
       </div>
     </div>
   );

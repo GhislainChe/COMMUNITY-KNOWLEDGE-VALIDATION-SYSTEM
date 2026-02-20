@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Flag } from "lucide-react";
 import { api } from "../../api/api";
 import DiscoverListSkeleton from "../../components/UIskeletons/ProfileSkeleton";
+
+// ✅ Add report modal
+import ReportModal from "../../components/ReportModal";
 
 export default function DiscussionsPage() {
   const [searchParams] = useSearchParams();
@@ -36,6 +39,11 @@ export default function DiscussionsPage() {
   const [threads, setThreads] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
   const [errorList, setErrorList] = useState("");
+
+  // ✅ Report modal state
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState({ type: "COMMENT", id: 0 });
+  const [reportSubtitle, setReportSubtitle] = useState("");
 
   const bottomRef = useRef(null);
 
@@ -89,7 +97,7 @@ export default function DiscussionsPage() {
         setComments(flat);
       } catch (err) {
         setErrorThread(
-          err?.response?.data?.message || "Failed to load discussion",
+          err?.response?.data?.message || "Failed to load discussion"
         );
       } finally {
         setLoadingThread(false);
@@ -108,7 +116,6 @@ export default function DiscussionsPage() {
         setLoadingList(true);
         setErrorList("");
 
-        // If you haven't created this endpoint yet, you'll see the error message below.
         const res = await api.get(`/discussions/mine`);
         const raw = res.data;
 
@@ -123,7 +130,7 @@ export default function DiscussionsPage() {
       } catch (err) {
         setErrorList(
           err?.response?.data?.message ||
-            "Discussion list endpoint not available yet (we will add it).",
+            "Discussion list endpoint not available yet (we will add it)."
         );
       } finally {
         setLoadingList(false);
@@ -136,7 +143,6 @@ export default function DiscussionsPage() {
   // Auto-scroll to bottom when messages load / change
   useEffect(() => {
     if (!practiceId) return;
-    // small delay to let DOM paint
     const t = setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 50);
@@ -176,7 +182,7 @@ export default function DiscussionsPage() {
       setSending(true);
       await api.post(
         `/practices/${practiceId}/comments/${replyTo.commentId}/replies`,
-        { content: trimmed },
+        { content: trimmed }
       );
 
       setReplyText("");
@@ -195,6 +201,15 @@ export default function DiscussionsPage() {
       if (replyTo) handleReplySend();
       else handleSend();
     }
+  }
+
+  // ✅ Open report modal helper
+  function openReportComment(comment) {
+    setReportTarget({ type: "COMMENT", id: Number(comment.commentId) || 0 });
+    setReportSubtitle(
+      `Reporting a comment by ${comment.authorName || "User"} (ID: ${comment.commentId})`
+    );
+    setReportOpen(true);
   }
 
   if (loadingList) return <DiscoverListSkeleton count={6} />;
@@ -222,16 +237,12 @@ export default function DiscussionsPage() {
         </p>
 
         <div className="mt-4 ">
-          
-
           {!loadingList && !errorList && threads.length === 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
               You haven’t commented on any practice yet.
             </div>
           )}
 
-          {/* When backend endpoint exists, render thread list here */}
-          {/* Thread list */}
           {!loadingList && !errorList && threads.length > 0 && (
             <div className="mt-6 space-y-3">
               {threads.map((t) => (
@@ -288,8 +299,16 @@ export default function DiscussionsPage() {
       {/* Header */}
       <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => navigate("/app/discussions")} className="rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10" > <ArrowLeft size={18} /> </button>
-          <p className="text-xs text-slate-500 dark:text-slate-300/70">Practice discussions</p>
+          <button
+            type="button"
+            onClick={() => navigate("/app/discussions")}
+            className="rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <p className="text-xs text-slate-500 dark:text-slate-300/70">
+            Practice discussions
+          </p>
         </div>
         <h1 className="mt-1 font-heading text-xl font-semibold">
           {practiceInfo?.title || "Practice discussion"}
@@ -383,26 +402,43 @@ export default function DiscussionsPage() {
                     {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
                   </p>
 
-                  {/* Reply button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setReplyTo({
-                        commentId: c.commentId,
-                        userId: c.userId,
-                        authorName: c.authorName || "User",
-                        content: c.content,
-                      });
-                      setReplyText("");
-                    }}
-                    className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${
-                      isMine
-                        ? "bg-white/15 text-white hover:bg-white/20"
-                        : "bg-black/10 text-slate-700 hover:bg-black/15 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15"
-                    }`}
-                  >
-                    Reply
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {/* ✅ Report button */}
+                    <button
+                      type="button"
+                      onClick={() => openReportComment(c)}
+                      className={`rounded-lg px-2 py-1 text-[11px] font-semibold inline-flex items-center gap-1 ${
+                        isMine
+                          ? "bg-white/15 text-white hover:bg-white/20"
+                          : "bg-black/10 text-slate-700 hover:bg-black/15 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15"
+                      }`}
+                      title="Report this comment"
+                    >
+                      <Flag className="h-3.5 w-3.5" />
+                      Report
+                    </button>
+
+                    {/* Reply button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplyTo({
+                          commentId: c.commentId,
+                          userId: c.userId,
+                          authorName: c.authorName || "User",
+                          content: c.content,
+                        });
+                        setReplyText("");
+                      }}
+                      className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${
+                        isMine
+                          ? "bg-white/15 text-white hover:bg-white/20"
+                          : "bg-black/10 text-slate-700 hover:bg-black/15 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15"
+                      }`}
+                    >
+                      Reply
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -461,6 +497,16 @@ export default function DiscussionsPage() {
           {sending ? "Sending..." : "Send"}
         </button>
       </div>
+
+      {/* ✅ Report Modal (for comments) */}
+      <ReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType={reportTarget.type}
+        targetId={reportTarget.id}
+        title="Report comment"
+        subtitle={reportSubtitle}
+      />
     </div>
   );
 }
