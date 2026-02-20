@@ -1,3 +1,4 @@
+// clients/src/layouts/AppLayout.jsx
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Leaf,
@@ -9,7 +10,7 @@ import {
   Sun,
   Moon,
   Bookmark,
-  Gavel,
+  ShieldAlert,
 } from "lucide-react";
 import { logout } from "../utils/auth";
 import { getTheme, toggleTheme, applyTheme } from "../utils/theme";
@@ -22,7 +23,6 @@ export default function AppLayout() {
 
   const [theme, setTheme] = useState(getTheme());
 
-  // Apply theme on mount and when it changes
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
@@ -33,6 +33,8 @@ export default function AppLayout() {
     navigate("/", { replace: true });
   }
 
+  // NOTE: Your app currently stores a "user" in localStorage.
+  // We use it only for role-based nav visibility.
   const user = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("user")) || null;
@@ -42,23 +44,19 @@ export default function AppLayout() {
   }, []);
 
   const isModerator = useMemo(() => {
-    const role =
-      user?.userRole || user?.role || user?.user?.userRole || user?.user?.role;
+    const role = (user?.userRole || user?.role || "").toUpperCase();
     return role === "MODERATOR" || role === "ADMIN";
   }, [user]);
 
-  // Determine current tab title from route
   const currentTab = useMemo(() => {
     const path = location.pathname;
-
     if (path.includes("/app/practices")) return "Practices";
     if (path.includes("/app/bookmarks")) return "Bookmarks";
     if (path.includes("/app/discover")) return "Discover";
     if (path.includes("/app/discussions")) return "Discussions";
-    if (path.includes("/app/moderator")) return "Moderator";
     if (path.includes("/app/about")) return "About";
     if (path.includes("/app/profile")) return "Profile";
-
+    if (path.includes("/app/moderation")) return "Moderation";
     return "Dashboard";
   }, [location.pathname]);
 
@@ -68,6 +66,85 @@ export default function AppLayout() {
     "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20";
   const linkInactive =
     "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300/80 dark:hover:bg-white/10 dark:hover:text-white";
+
+  function NavLinks({ onClick }) {
+    return (
+      <>
+        <NavLink
+          to="practices"
+          onClick={onClick}
+          className={({ isActive }) =>
+            `${linkBase} ${isActive ? linkActive : linkInactive}`
+          }
+        >
+          <Leaf className="h-5 w-5" /> Practices
+        </NavLink>
+
+        <NavLink
+          to="bookmarks"
+          onClick={onClick}
+          className={({ isActive }) =>
+            `${linkBase} ${isActive ? linkActive : linkInactive}`
+          }
+        >
+          <Bookmark className="h-5 w-5" /> Bookmarks
+        </NavLink>
+
+        <NavLink
+          to="discover"
+          onClick={onClick}
+          className={({ isActive }) =>
+            `${linkBase} ${isActive ? linkActive : linkInactive}`
+          }
+        >
+          <Compass className="h-5 w-5" /> Discover
+        </NavLink>
+
+        <NavLink
+          to="discussions"
+          onClick={onClick}
+          className={({ isActive }) =>
+            `${linkBase} ${isActive ? linkActive : linkInactive}`
+          }
+        >
+          <MessageSquareText className="h-5 w-5" /> Discussions
+        </NavLink>
+
+        <NavLink
+          to="about"
+          onClick={onClick}
+          className={({ isActive }) =>
+            `${linkBase} ${isActive ? linkActive : linkInactive}`
+          }
+        >
+          <Info className="h-5 w-5" /> About
+        </NavLink>
+
+        <NavLink
+          to="profile"
+          onClick={onClick}
+          className={({ isActive }) =>
+            `${linkBase} ${isActive ? linkActive : linkInactive}`
+          }
+        >
+          <User className="h-5 w-5" /> Profile
+        </NavLink>
+
+        {/* ✅ Only for MODERATOR / ADMIN */}
+        {isModerator && (
+          <NavLink
+            to="moderation"
+            onClick={onClick}
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? linkActive : linkInactive}`
+            }
+          >
+            <ShieldAlert className="h-5 w-5" /> Moderation
+          </NavLink>
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0b1220] dark:text-slate-100">
@@ -80,7 +157,7 @@ export default function AppLayout() {
               <span className="font-brand font-semibold">CKVS</span>
             </div>
 
-            {/* Tab title (optional) */}
+            {/* optional: show tab */}
             {/* <div className="hidden md:block">
               <span className="text-sm text-slate-400">/</span>{" "}
               <span className="font-heading text-lg font-semibold">
@@ -91,14 +168,13 @@ export default function AppLayout() {
 
           {/* Right: actions */}
           <div className="flex items-center gap-3">
-            {/* hamburgur menu for mobile */}
+            {/* hamburger menu for mobile */}
             <button
               onClick={() => setMobileNavOpen(true)}
               className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50
-             dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 md:hidden"
+              dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 md:hidden"
               title="Open menu"
             >
-              {/* Menu icon */}
               <svg
                 viewBox="0 0 24 24"
                 className="h-5 w-5"
@@ -123,7 +199,7 @@ export default function AppLayout() {
               )}
             </button>
 
-            {/* User */}
+            {/* User mini card */}
             <div className="hidden sm:flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-white/5">
               <div className="grid h-9 w-9 place-items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
                 <User className="h-5 w-5" />
@@ -144,16 +220,13 @@ export default function AppLayout() {
       {/* Mobile Sidebar Drawer */}
       {mobileNavOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          {/* Backdrop (fade) */}
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-[fadeIn_200ms_ease-out]"
             onClick={() => setMobileNavOpen(false)}
           />
 
-          {/* Drawer panel (slide in) */}
           <div className="absolute left-0 top-0 h-full w-[85%] max-w-[320px] animate-[slideIn_220ms_ease-out]">
             <div className="h-full rounded-r-3xl border border-slate-200 bg-white p-4 shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
-              {/* Drawer top */}
               <div className="flex items-center justify-between">
                 <div className="text-lg tracking-wide">
                   <span className="font-brand font-semibold">CKVS</span>
@@ -162,7 +235,7 @@ export default function AppLayout() {
                 <button
                   onClick={() => setMobileNavOpen(false)}
                   className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50
-                       dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                  dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                   title="Close"
                 >
                   <svg
@@ -181,82 +254,10 @@ export default function AppLayout() {
                 Preserving and validating knowledge
               </p>
 
-              {/* Same nav links as desktop */}
               <nav className="mt-5 space-y-2">
-                <NavLink
-                  to="practices"
-                  onClick={() => setMobileNavOpen(false)}
-                  className={({ isActive }) =>
-                    `${linkBase} ${isActive ? linkActive : linkInactive}`
-                  }
-                >
-                  <Leaf className="h-5 w-5" /> Practices
-                </NavLink>
-
-                <NavLink
-                  to="bookmarks"
-                  onClick={() => setMobileNavOpen(false)}
-                  className={({ isActive }) =>
-                    `${linkBase} ${isActive ? linkActive : linkInactive}`
-                  }
-                >
-                  <Bookmark className="h-5 w-5" /> Bookmarks
-                </NavLink>
-
-                <NavLink
-                  to="discover"
-                  onClick={() => setMobileNavOpen(false)}
-                  className={({ isActive }) =>
-                    `${linkBase} ${isActive ? linkActive : linkInactive}`
-                  }
-                >
-                  <Compass className="h-5 w-5" /> Discover
-                </NavLink>
-
-                <NavLink
-                  to="discussions"
-                  onClick={() => setMobileNavOpen(false)}
-                  className={({ isActive }) =>
-                    `${linkBase} ${isActive ? linkActive : linkInactive}`
-                  }
-                >
-                  <MessageSquareText className="h-5 w-5" /> Discussions
-                </NavLink>
-
-                {isModerator && (
-                  <NavLink
-                    to="moderator"
-                    onClick={() => setMobileNavOpen(false)}
-                    className={({ isActive }) =>
-                      `${linkBase} ${isActive ? linkActive : linkInactive}`
-                    }
-                  >
-                    <Gavel className="h-5 w-5" /> Moderator
-                  </NavLink>
-                )}
-
-                <NavLink
-                  to="about"
-                  onClick={() => setMobileNavOpen(false)}
-                  className={({ isActive }) =>
-                    `${linkBase} ${isActive ? linkActive : linkInactive}`
-                  }
-                >
-                  <Info className="h-5 w-5" /> About
-                </NavLink>
-
-                <NavLink
-                  to="profile"
-                  onClick={() => setMobileNavOpen(false)}
-                  className={({ isActive }) =>
-                    `${linkBase} ${isActive ? linkActive : linkInactive}`
-                  }
-                >
-                  <User className="h-5 w-5" /> Profile
-                </NavLink>
+                <NavLinks onClick={() => setMobileNavOpen(false)} />
               </nav>
 
-              {/* Logout */}
               <div className="mt-6 border-t border-slate-200 pt-4 dark:border-white/10">
                 <button
                   onClick={() => {
@@ -264,7 +265,7 @@ export default function AppLayout() {
                     handleLogout();
                   }}
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900
-                       dark:text-slate-300/80 dark:hover:bg-white/10 dark:hover:text-white"
+                  dark:text-slate-300/80 dark:hover:bg-white/10 dark:hover:text-white"
                 >
                   <LogOut className="h-5 w-5" />
                   Logout
@@ -280,84 +281,14 @@ export default function AppLayout() {
         {/* Sidebar */}
         <aside className="hidden md:block h-full sticky top-0 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
           <nav className="space-y-2">
-            <NavLink
-              to="practices"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? linkActive : linkInactive}`
-              }
-            >
-              <Leaf className="h-5 w-5" />
-              Practices
-            </NavLink>
-
-            <NavLink
-              to="bookmarks"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? linkActive : linkInactive}`
-              }
-            >
-              <Bookmark className="h-5 w-5" />
-              Bookmarks
-            </NavLink>
-
-            <NavLink
-              to="discover"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? linkActive : linkInactive}`
-              }
-            >
-              <Compass className="h-5 w-5" />
-              Discover
-            </NavLink>
-
-            <NavLink
-              to="discussions"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? linkActive : linkInactive}`
-              }
-            >
-              <MessageSquareText className="h-5 w-5" />
-              Discussions
-            </NavLink>
-
-            {isModerator && (
-              <NavLink
-                to="moderator"
-                className={({ isActive }) =>
-                  `${linkBase} ${isActive ? linkActive : linkInactive}`
-                }
-              >
-                <Gavel className="h-5 w-5" />
-                Moderator
-              </NavLink>
-            )}
-
-            <NavLink
-              to="about"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? linkActive : linkInactive}`
-              }
-            >
-              <Info className="h-5 w-5" />
-              About
-            </NavLink>
-
-            <NavLink
-              to="profile"
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? linkActive : linkInactive}`
-              }
-            >
-              <User className="h-5 w-5" />
-              Profile
-            </NavLink>
+            <NavLinks />
           </nav>
 
-          {/* Logout */}
           <div className="mt-6 border-t border-slate-200 pt-4 dark:border-white/10">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300/80 dark:hover:bg-white/10 dark:hover:text-white"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900
+              dark:text-slate-300/80 dark:hover:bg-white/10 dark:hover:text-white"
             >
               <LogOut className="h-5 w-5" />
               Logout

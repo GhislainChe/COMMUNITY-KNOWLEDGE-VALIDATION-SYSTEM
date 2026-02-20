@@ -1,3 +1,4 @@
+// clients/src/App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
@@ -11,7 +12,9 @@ import DiscoverPage from "./pages/app/DiscoverPage";
 import DiscussionsPage from "./pages/app/DiscussionsPage";
 import AboutPage from "./pages/app/AboutPage";
 import ProfilePage from "./pages/app/ProfilePage";
-import ModeratorPage from "./pages/app/ModeratorPage";
+
+// ✅ NEW
+import ModerationPage from "./pages/app/ModerationPage";
 
 export default function App() {
   return (
@@ -33,8 +36,8 @@ export default function App() {
         <Route path="about" element={<AboutPage />} />
         <Route path="profile" element={<ProfilePage />} />
 
-        <Route path="moderator" element={<ModeratorPage />} />
-        
+        {/* ✅ NEW route */}
+        <Route path="moderation" element={<ModerationPage />} />
       </Route>
 
       {/* Fallback */}
