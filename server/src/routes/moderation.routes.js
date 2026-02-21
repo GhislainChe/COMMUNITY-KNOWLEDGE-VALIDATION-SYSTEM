@@ -251,4 +251,106 @@ router.patch(
   }
 );
 
+router.get(
+  "/moderation/flags/:flagId/details",
+  requireAuth,
+  requireRole("MODERATOR", "ADMIN"),
+  async (req, res) => {
+    try {
+      const flagId = Number(req.params.flagId);
+      if (!Number.isInteger(flagId) || flagId <= 0) {
+        return res.status(400).json({ message: "Invalid flagId" });
+      }
+
+      const [flagRows] = await pool.query(
+        "SELECT * FROM flags WHERE flagId=?",
+        [flagId]
+      );
+
+      if (flagRows.length === 0) {
+        return res.status(404).json({ message: "Flag not found" });
+      }
+
+      const flag = flagRows[0];
+
+      // PRACTICE preview
+      if (flag.targetType === "PRACTICE") {
+        const [pRows] = await pool.query(
+          `SELECT practiceId, title, description, status, userId
+           FROM practices WHERE practiceId=?`,
+          [flag.targetId]
+        );
+
+        const p = pRows[0] || null;
+        return res.json({
+          targetType: "PRACTICE",
+          flagId: flag.flagId,
+          targetId: flag.targetId,
+          reason: flag.reason,
+          details: flag.details,
+          practice: p,
+        });
+      }
+
+      // COMMENT preview
+      if (flag.targetType === "COMMENT") {
+        const [cRows] = await pool.query(
+          `SELECT c.commentId, c.practiceId, c.userId, c.content, c.status, c.createdAt,
+                  u.fullName AS authorName,
+                  p.title AS practiceTitle
+           FROM comments c
+           JOIN users u ON u.userId = c.userId
+           JOIN practices p ON p.practiceId = c.practiceId
+           WHERE c.commentId=?`,
+          [flag.targetId]
+        );
+
+        const c = cRows[0] || null;
+        return res.json({
+          targetType: "COMMENT",
+          flagId: flag.flagId,
+          targetId: flag.targetId,
+          reason: flag.reason,
+          details: flag.details,
+          comment: c,
+        });
+      }
+
+      // OUTCOME preview (if you want)
+      if (flag.targetType === "OUTCOME") {
+        const [oRows] = await pool.query(
+          `SELECT o.reportId, o.practiceId, o.userId, o.comment, o.status, o.createdAt,
+                  u.fullName AS authorName,
+                  p.title AS practiceTitle
+           FROM outcomeReports o
+           JOIN users u ON u.userId = o.userId
+           JOIN practices p ON p.practiceId = o.practiceId
+           WHERE o.reportId=?`,
+          [flag.targetId]
+        );
+
+        const o = oRows[0] || null;
+        return res.json({
+          targetType: "OUTCOME",
+          flagId: flag.flagId,
+          targetId: flag.targetId,
+          reason: flag.reason,
+          details: flag.details,
+          outcome: o,
+        });
+      }
+
+      return res.json({
+        targetType: flag.targetType,
+        flagId: flag.flagId,
+        targetId: flag.targetId,
+        reason: flag.reason,
+        details: flag.details,
+      });
+    } catch (err) {
+      return res.status(500).json({ message: "Server error", error: err.message });
+    }
+  }
+);
+
 module.exports = router;
