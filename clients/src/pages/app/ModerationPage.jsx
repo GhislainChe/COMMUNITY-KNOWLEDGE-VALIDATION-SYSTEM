@@ -155,7 +155,7 @@ export default function ModerationPage() {
             <div className="flex items-center gap-2">
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-600 text-white">
                 <ShieldAlert className="h-5 w-5" />
-              </div>
+              </div> 
               <div className="min-w-0">
                 <h1 className="truncate font-heading text-xl font-bold">Moderation</h1>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
