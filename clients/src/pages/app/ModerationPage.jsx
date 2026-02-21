@@ -10,6 +10,7 @@ import {
   Trash2,
   Ban,
   MessageSquareWarning,
+  FileSearch,
 } from "lucide-react";
 
 function formatDate(dt) {
@@ -38,7 +39,6 @@ function typePill(type) {
 
 function actionOptionsFor(targetType) {
   const t = (targetType || "").toUpperCase();
-  // Always allow NO_ACTION. Others depend on targetType.
   const base = [{ value: "NO_ACTION", label: "No action" }];
   if (t === "COMMENT") base.push({ value: "HIDE_COMMENT", label: "Hide comment" });
   if (t === "PRACTICE") base.push({ value: "REMOVE_PRACTICE", label: "Remove practice" });
@@ -61,6 +61,22 @@ function actionIcon(action) {
   }
 }
 
+function SkeletonRow() {
+  return (
+    <div className="p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="h-6 w-20 rounded-full bg-slate-200 dark:bg-white/10" />
+        <div className="h-6 w-24 rounded-full bg-slate-200 dark:bg-white/10" />
+        <div className="h-6 w-28 rounded-full bg-slate-200 dark:bg-white/10" />
+        <div className="ml-auto h-4 w-32 rounded bg-slate-200 dark:bg-white/10" />
+      </div>
+      <div className="h-4 w-[85%] rounded bg-slate-200 dark:bg-white/10" />
+      <div className="h-4 w-[60%] rounded bg-slate-200 dark:bg-white/10" />
+      <div className="h-3 w-40 rounded bg-slate-200 dark:bg-white/10" />
+    </div>
+  );
+}
+
 export default function ModerationPage() {
   const [flags, setFlags] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +86,10 @@ export default function ModerationPage() {
   const [openFlag, setOpenFlag] = useState(null);
   const [actionTaken, setActionTaken] = useState("NO_ACTION");
   const [reviewNote, setReviewNote] = useState("");
+
+  // optional preview (won’t break if endpoint not available)
+  const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState("");
@@ -94,12 +114,29 @@ export default function ModerationPage() {
 
   const pendingCount = useMemo(() => flags.length, [flags]);
 
+  async function tryLoadPreview(flagId) {
+    // Optional endpoint (add later): GET /api/moderation/flags/:flagId/details
+    try {
+      setPreviewLoading(true);
+      setPreview(null);
+      const res = await api.get(`/moderation/flags/${flagId}/details`);
+      setPreview(res.data || null);
+    } catch {
+      // ignore if not implemented
+      setPreview(null);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
   function openReviewModal(flag) {
     setOpenFlag(flag);
     setActionTaken("NO_ACTION");
     setReviewNote("");
     setSaveErr("");
     setSaveMsg("");
+    setPreview(null);
+    if (flag?.flagId) tryLoadPreview(flag.flagId);
   }
 
   function closeReviewModal() {
@@ -107,6 +144,8 @@ export default function ModerationPage() {
     setSaveErr("");
     setSaveMsg("");
     setSaving(false);
+    setPreview(null);
+    setPreviewLoading(false);
   }
 
   async function submitReview(e) {
@@ -124,8 +163,6 @@ export default function ModerationPage() {
       });
 
       setSaveMsg("Resolved ✅");
-
-      // Remove resolved flag from UI immediately
       setFlags((prev) => prev.filter((f) => f.flagId !== openFlag.flagId));
 
       setTimeout(() => {
@@ -139,7 +176,25 @@ export default function ModerationPage() {
   }
 
   if (loading) {
-    return <p className="p-4 text-slate-500">Loading moderation dashboard...</p>;
+    return (
+      <div className="p-3 space-y-4">
+        <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <div className="h-6 w-40 rounded bg-slate-200 dark:bg-white/10" />
+          <div className="mt-2 h-4 w-72 rounded bg-slate-200 dark:bg-white/10" />
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
+          <div className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
+            <div className="h-4 w-32 rounded bg-slate-200 dark:bg-white/10" />
+          </div>
+          <div className="divide-y divide-slate-200 dark:divide-white/10">
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (pageErr) {
@@ -155,7 +210,7 @@ export default function ModerationPage() {
             <div className="flex items-center gap-2">
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-600 text-white">
                 <ShieldAlert className="h-5 w-5" />
-              </div> 
+              </div>
               <div className="min-w-0">
                 <h1 className="truncate font-heading text-xl font-bold">Moderation</h1>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
@@ -188,7 +243,7 @@ export default function ModerationPage() {
           </p>
           <div className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300/70">
             <MessageSquareWarning className="h-4 w-4" />
-            Oldest first? (your API returns newest first)
+            API returns newest first
           </div>
         </div>
 
@@ -282,10 +337,47 @@ export default function ModerationPage() {
               </button>
             </div>
 
-            {/* Body */}
             <div className="max-h-[70vh] overflow-y-auto p-4">
+              {/* Optional preview */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
+                    Content preview (optional)
+                  </p>
+                  <FileSearch className="h-4 w-4 text-slate-400" />
+                </div>
+
+                {previewLoading ? (
+                  <div className="mt-2 space-y-2">
+                    <div className="h-4 w-[70%] rounded bg-slate-200 dark:bg-white/10" />
+                    <div className="h-4 w-[90%] rounded bg-slate-200 dark:bg-white/10" />
+                  </div>
+                ) : preview ? (
+                  <div className="mt-2 space-y-1">
+                    {preview.title && (
+                      <p className="font-semibold">{preview.title}</p>
+                    )}
+                    {preview.authorName && (
+                      <p className="text-xs text-slate-500 dark:text-slate-300/70">
+                        by {preview.authorName}
+                      </p>
+                    )}
+                    {preview.content && <p className="mt-2">{preview.content}</p>}
+                    {!preview.title && !preview.content && (
+                      <p className="mt-2 text-slate-500 dark:text-slate-300/70">
+                        Preview format not recognized.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-slate-500 dark:text-slate-300/70">
+                    Preview endpoint not added yet (safe to ignore).
+                  </p>
+                )}
+              </div>
+
               {openFlag.details && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700
                 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
                     Reporter details
