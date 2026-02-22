@@ -97,7 +97,7 @@ export default function DiscussionsPage() {
         setComments(flat);
       } catch (err) {
         setErrorThread(
-          err?.response?.data?.message || "Failed to load discussion"
+          err?.response?.data?.message || "Failed to load discussion",
         );
       } finally {
         setLoadingThread(false);
@@ -130,7 +130,7 @@ export default function DiscussionsPage() {
       } catch (err) {
         setErrorList(
           err?.response?.data?.message ||
-            "Discussion list endpoint not available yet (we will add it)."
+            "Discussion list endpoint not available yet (we will add it).",
         );
       } finally {
         setLoadingList(false);
@@ -182,7 +182,7 @@ export default function DiscussionsPage() {
       setSending(true);
       await api.post(
         `/practices/${practiceId}/comments/${replyTo.commentId}/replies`,
-        { content: trimmed }
+        { content: trimmed },
       );
 
       setReplyText("");
@@ -207,7 +207,7 @@ export default function DiscussionsPage() {
   function openReportComment(comment) {
     setReportTarget({ type: "COMMENT", id: Number(comment.commentId) || 0 });
     setReportSubtitle(
-      `Reporting a comment by ${comment.authorName || "User"} (ID: ${comment.commentId})`
+      `Reporting a comment by ${comment.authorName || "User"} (ID: ${comment.commentId})`,
     );
     setReportOpen(true);
   }
@@ -219,7 +219,8 @@ export default function DiscussionsPage() {
         <div className="space-y-2 p-3">
           <h1 className="font-heading text-2xl font-semibold">Discussions</h1>
           <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
-            Error getting your discussions<b> Check your internet connection and try again</b>.
+            Error getting your discussions
+            <b> Check your internet connection and try again</b>.
           </div>
         </div>
       </div>

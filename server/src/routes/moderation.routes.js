@@ -69,7 +69,7 @@ router.get(
         .status(500)
         .json({ message: "Server error", error: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -101,7 +101,7 @@ router.get(
         WHERE f.status='RESOLVED'
         ORDER BY f.reviewedAt DESC
         LIMIT 200
-        `
+        `,
       );
 
       return res.json({ audit: rows });
@@ -110,7 +110,7 @@ router.get(
         .status(500)
         .json({ message: "Server error", error: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -134,7 +134,12 @@ router.patch(
 
       const { actionTaken, reviewNote } = req.body;
 
-      const allowedActions = ["NO_ACTION", "HIDE_COMMENT", "HIDE_PRACTICE", "REJECT_OUTCOME"];
+      const allowedActions = [
+        "NO_ACTION",
+        "HIDE_COMMENT",
+        "HIDE_PRACTICE",
+        "REJECT_OUTCOME",
+      ];
       if (!allowedActions.includes(actionTaken)) {
         conn.release();
         return res.status(400).json({ message: "Invalid actionTaken" });
@@ -144,13 +149,15 @@ router.patch(
 
       const [flagRows] = await conn.query(
         "SELECT * FROM flags WHERE flagId=? AND status='PENDING'",
-        [flagId]
+        [flagId],
       );
 
       if (flagRows.length === 0) {
         await conn.rollback();
         conn.release();
-        return res.status(404).json({ message: "Flag not found or already resolved" });
+        return res
+          .status(404)
+          .json({ message: "Flag not found or already resolved" });
       }
 
       const flag = flagRows[0];
@@ -160,44 +167,58 @@ router.patch(
         if (flag.targetType !== "COMMENT") {
           await conn.rollback();
           conn.release();
-          return res.status(400).json({ message: "This action can only be used for COMMENT reports" });
+          return res
+            .status(400)
+            .json({
+              message: "This action can only be used for COMMENT reports",
+            });
         }
-        await conn.query("UPDATE comments SET status='HIDDEN' WHERE commentId=?", [
-          flag.targetId,
-        ]);
+        await conn.query(
+          "UPDATE comments SET status='HIDDEN' WHERE commentId=?",
+          [flag.targetId],
+        );
       }
 
       if (actionTaken === "HIDE_PRACTICE") {
         if (flag.targetType !== "PRACTICE") {
           await conn.rollback();
           conn.release();
-          return res.status(400).json({ message: "This action can only be used for PRACTICE reports" });
+          return res
+            .status(400)
+            .json({
+              message: "This action can only be used for PRACTICE reports",
+            });
         }
 
         // ✅ IMPORTANT: your practices.status is ACTIVE/...
         // Use HIDDEN instead of REMOVED to avoid enum issues.
-        await conn.query("UPDATE practices SET status='HIDDEN' WHERE practiceId=?", [
-          flag.targetId,
-        ]);
+        await conn.query(
+          "UPDATE practices SET status='HIDDEN' WHERE practiceId=?",
+          [flag.targetId],
+        );
       }
 
       if (actionTaken === "REJECT_OUTCOME") {
         if (flag.targetType !== "OUTCOME") {
           await conn.rollback();
           conn.release();
-          return res.status(400).json({ message: "This action can only be used for OUTCOME reports" });
+          return res
+            .status(400)
+            .json({
+              message: "This action can only be used for OUTCOME reports",
+            });
         }
 
         // Assumes table outcomeReports exists
         await conn.query(
           "UPDATE outcomeReports SET status='REJECTED' WHERE reportId=?",
-          [flag.targetId]
+          [flag.targetId],
         );
 
         // Recalculate practice score after rejecting an outcome
         const [prRows] = await conn.query(
           "SELECT practiceId FROM outcomeReports WHERE reportId=?",
-          [flag.targetId]
+          [flag.targetId],
         );
 
         if (prRows.length > 0) {
@@ -207,7 +228,7 @@ router.patch(
             `SELECT AVG(outcomeScore) AS avgScore, COUNT(*) AS countReports
              FROM outcomeReports
              WHERE practiceId=? AND status='VALID'`,
-            [practiceId]
+            [practiceId],
           );
 
           const avgScore =
@@ -218,7 +239,7 @@ router.patch(
 
           await conn.query(
             "UPDATE practices SET effectivenessScore=?, confidenceLevel=? WHERE practiceId=?",
-            [avgScore, confidenceLevel, practiceId]
+            [avgScore, confidenceLevel, practiceId],
           );
         }
       }
@@ -232,7 +253,7 @@ router.patch(
              reviewNote=?,
              reviewedAt=NOW()
          WHERE flagId=?`,
-        [req.user.userId, actionTaken, reviewNote || null, flagId]
+        [req.user.userId, actionTaken, reviewNote || null, flagId],
       );
 
       await conn.commit();
@@ -246,9 +267,11 @@ router.patch(
     } catch (err) {
       await conn.rollback();
       conn.release();
-      return res.status(500).json({ message: "Server error", error: err.message });
+      return res
+        .status(500)
+        .json({ message: "Server error", error: err.message });
     }
-  }
+  },
 );
 
 router.get(
@@ -264,7 +287,7 @@ router.get(
 
       const [flagRows] = await pool.query(
         "SELECT * FROM flags WHERE flagId=?",
-        [flagId]
+        [flagId],
       );
 
       if (flagRows.length === 0) {
@@ -278,7 +301,7 @@ router.get(
         const [pRows] = await pool.query(
           `SELECT practiceId, title, description, status, userId
            FROM practices WHERE practiceId=?`,
-          [flag.targetId]
+          [flag.targetId],
         );
 
         const p = pRows[0] || null;
@@ -302,7 +325,7 @@ router.get(
            JOIN users u ON u.userId = c.userId
            JOIN practices p ON p.practiceId = c.practiceId
            WHERE c.commentId=?`,
-          [flag.targetId]
+          [flag.targetId],
         );
 
         const c = cRows[0] || null;
@@ -326,7 +349,7 @@ router.get(
            JOIN users u ON u.userId = o.userId
            JOIN practices p ON p.practiceId = o.practiceId
            WHERE o.reportId=?`,
-          [flag.targetId]
+          [flag.targetId],
         );
 
         const o = oRows[0] || null;
@@ -348,9 +371,11 @@ router.get(
         details: flag.details,
       });
     } catch (err) {
-      return res.status(500).json({ message: "Server error", error: err.message });
+      return res
+        .status(500)
+        .json({ message: "Server error", error: err.message });
     }
-  }
+  },
 );
 
 module.exports = router;

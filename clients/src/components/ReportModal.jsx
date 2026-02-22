@@ -66,7 +66,10 @@ export default function ReportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0b1220]">
         {/* Header */}
@@ -105,14 +108,18 @@ export default function ReportModal({
         {/* Body */}
         <div className="p-4">
           {err && (
-            <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700
-            dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+            <div
+              className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700
+            dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200"
+            >
               {err}
             </div>
           )}
           {msg && (
-            <div className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800
-            dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
+            <div
+              className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800
+            dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200"
+            >
               {msg}
             </div>
           )}
