@@ -24,25 +24,33 @@ function formatDate(dt) {
 function reasonBadge(reason) {
   const r = (reason || "").toUpperCase();
   if (r === "ABUSIVE") return "bg-red-500/15 text-red-800 dark:text-red-200";
-  if (r === "FALSE_INFO") return "bg-amber-500/15 text-amber-800 dark:text-amber-200";
-  if (r === "SPAM") return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
+  if (r === "FALSE_INFO")
+    return "bg-amber-500/15 text-amber-800 dark:text-amber-200";
+  if (r === "SPAM")
+    return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
   return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
 }
 
 function typePill(type) {
   const t = (type || "").toUpperCase();
-  if (t === "PRACTICE") return "bg-emerald-600/15 text-emerald-800 dark:text-emerald-200";
-  if (t === "COMMENT") return "bg-indigo-600/15 text-indigo-800 dark:text-indigo-200";
-  if (t === "OUTCOME") return "bg-amber-600/15 text-amber-800 dark:text-amber-200";
+  if (t === "PRACTICE")
+    return "bg-emerald-600/15 text-emerald-800 dark:text-emerald-200";
+  if (t === "COMMENT")
+    return "bg-indigo-600/15 text-indigo-800 dark:text-indigo-200";
+  if (t === "OUTCOME")
+    return "bg-amber-600/15 text-amber-800 dark:text-amber-200";
   return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
 }
 
 function actionOptionsFor(targetType) {
   const t = (targetType || "").toUpperCase();
   const base = [{ value: "NO_ACTION", label: "No action" }];
-  if (t === "COMMENT") base.push({ value: "HIDE_COMMENT", label: "Hide comment" });
-  if (t === "PRACTICE") base.push({ value: "REMOVE_PRACTICE", label: "Remove practice" });
-  if (t === "OUTCOME") base.push({ value: "REJECT_OUTCOME", label: "Reject outcome" });
+  if (t === "COMMENT")
+    base.push({ value: "HIDE_COMMENT", label: "Hide comment" });
+  if (t === "PRACTICE")
+    base.push({ value: "REMOVE_PRACTICE", label: "Remove practice" });
+  if (t === "OUTCOME")
+    base.push({ value: "REJECT_OUTCOME", label: "Reject outcome" });
   return base;
 }
 
@@ -102,7 +110,9 @@ export default function ModerationPage() {
       const res = await api.get("/moderation/flags");
       setFlags(res.data?.flags || []);
     } catch (err) {
-      setPageErr(err?.response?.data?.message || "Failed to load moderation flags.");
+      setPageErr(
+        err?.response?.data?.message || "Failed to load moderation flags.",
+      );
     } finally {
       setLoading(false);
     }
@@ -212,7 +222,9 @@ export default function ModerationPage() {
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <h1 className="truncate font-heading text-xl font-bold">Moderation</h1>
+                <h1 className="truncate font-heading text-xl font-bold">
+                  Moderation
+                </h1>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
                   Review reported content and take action.
                 </p>
@@ -264,13 +276,15 @@ export default function ModerationPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`rounded-full px-3 py-1 text-[11px] font-semibold ${typePill(
-                        f.targetType
+                        f.targetType,
                       )}`}
                     >
                       {f.targetType}
                     </span>
 
-                    <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${reasonBadge(f.reason)}`}>
+                    <span
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold ${reasonBadge(f.reason)}`}
+                    >
                       {f.reason}
                     </span>
 
@@ -322,7 +336,8 @@ export default function ModerationPage() {
                   {openFlag.targetType} • Target {openFlag.targetId}
                 </p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-                  Reason: <span className="font-semibold">{openFlag.reason}</span>
+                  Reason:{" "}
+                  <span className="font-semibold">{openFlag.reason}</span>
                 </p>
               </div>
 
@@ -362,7 +377,9 @@ export default function ModerationPage() {
                         by {preview.authorName}
                       </p>
                     )}
-                    {preview.content && <p className="mt-2">{preview.content}</p>}
+                    {preview.content && (
+                      <p className="mt-2">{preview.content}</p>
+                    )}
                     {!preview.title && !preview.content && (
                       <p className="mt-2 text-slate-500 dark:text-slate-300/70">
                         Preview format not recognized.
@@ -375,10 +392,46 @@ export default function ModerationPage() {
                   </p>
                 )}
               </div>
+              {/* Quick actions */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {preview?.practice?.practiceId && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.open(
+                        `/app/practices/${preview.practice.practiceId}`,
+                        "_blank",
+                      )
+                    }
+                    className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50
+      dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                  >
+                    Open practice
+                  </button>
+                )}
+
+                {preview?.comment?.practiceId && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.open(
+                        `/app/discussions?practiceId=${preview.comment.practiceId}`,
+                        "_blank",
+                      )
+                    }
+                    className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50
+      dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                  >
+                    Open discussion
+                  </button>
+                )}
+              </div>
 
               {openFlag.details && (
-                <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700
-                dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+                <div
+                  className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700
+                dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+                >
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
                     Reporter details
                   </p>
@@ -387,15 +440,19 @@ export default function ModerationPage() {
               )}
 
               {saveErr && (
-                <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700
-                dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
+                <div
+                  className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700
+                dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200"
+                >
                   {saveErr}
                 </div>
               )}
 
               {saveMsg && (
-                <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800
-                dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
+                <div
+                  className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800
+                dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200"
+                >
                   {saveMsg}
                 </div>
               )}
