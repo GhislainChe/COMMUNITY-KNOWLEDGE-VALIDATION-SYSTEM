@@ -167,11 +167,9 @@ router.patch(
         if (flag.targetType !== "COMMENT") {
           await conn.rollback();
           conn.release();
-          return res
-            .status(400)
-            .json({
-              message: "This action can only be used for COMMENT reports",
-            });
+          return res.status(400).json({
+            message: "This action can only be used for COMMENT reports",
+          });
         }
         await conn.query(
           "UPDATE comments SET status='HIDDEN' WHERE commentId=?",
@@ -183,11 +181,9 @@ router.patch(
         if (flag.targetType !== "PRACTICE") {
           await conn.rollback();
           conn.release();
-          return res
-            .status(400)
-            .json({
-              message: "This action can only be used for PRACTICE reports",
-            });
+          return res.status(400).json({
+            message: "This action can only be used for PRACTICE reports",
+          });
         }
 
         // ✅ IMPORTANT: your practices.status is ACTIVE/...
@@ -202,11 +198,9 @@ router.patch(
         if (flag.targetType !== "OUTCOME") {
           await conn.rollback();
           conn.release();
-          return res
-            .status(400)
-            .json({
-              message: "This action can only be used for OUTCOME reports",
-            });
+          return res.status(400).json({
+            message: "This action can only be used for OUTCOME reports",
+          });
         }
 
         // Assumes table outcomeReports exists
@@ -296,80 +290,67 @@ router.get(
 
       const flag = flagRows[0];
 
-      // PRACTICE preview
+      // 🔹 JOIN reporter info
+      const [reporterRows] = await pool.query(
+        "SELECT userId, fullName, email FROM users WHERE userId=?",
+        [flag.reporterUserId],
+      );
+
+      const reporter = reporterRows[0] || null;
+
+      // 🔹 PRACTICE
       if (flag.targetType === "PRACTICE") {
         const [pRows] = await pool.query(
-          `SELECT practiceId, title, description, status, userId
-           FROM practices WHERE practiceId=?`,
+          "SELECT practiceId, title, description, status FROM practices WHERE practiceId=?",
           [flag.targetId],
         );
 
-        const p = pRows[0] || null;
         return res.json({
           targetType: "PRACTICE",
-          flagId: flag.flagId,
-          targetId: flag.targetId,
-          reason: flag.reason,
-          details: flag.details,
-          practice: p,
+          flag,
+          reporter,
+          practice: pRows[0] || null,
         });
       }
 
-      // COMMENT preview
+      // 🔹 COMMENT
       if (flag.targetType === "COMMENT") {
         const [cRows] = await pool.query(
-          `SELECT c.commentId, c.practiceId, c.userId, c.content, c.status, c.createdAt,
-                  u.fullName AS authorName,
-                  p.title AS practiceTitle
+          `SELECT c.commentId, c.content, c.status, c.createdAt,
+                  c.practiceId,
+                  u.fullName AS authorName
            FROM comments c
            JOIN users u ON u.userId = c.userId
-           JOIN practices p ON p.practiceId = c.practiceId
            WHERE c.commentId=?`,
           [flag.targetId],
         );
 
-        const c = cRows[0] || null;
         return res.json({
           targetType: "COMMENT",
-          flagId: flag.flagId,
-          targetId: flag.targetId,
-          reason: flag.reason,
-          details: flag.details,
-          comment: c,
+          flag,
+          reporter,
+          comment: cRows[0] || null,
         });
       }
 
-      // OUTCOME preview (if you want)
+      // 🔹 OUTCOME
       if (flag.targetType === "OUTCOME") {
         const [oRows] = await pool.query(
-          `SELECT o.reportId, o.practiceId, o.userId, o.comment, o.status, o.createdAt,
-                  u.fullName AS authorName,
-                  p.title AS practiceTitle
-           FROM outcomeReports o
-           JOIN users u ON u.userId = o.userId
-           JOIN practices p ON p.practiceId = o.practiceId
-           WHERE o.reportId=?`,
+          `SELECT reportId, comment, status, practiceId
+           FROM outcomeReports
+           WHERE reportId=?`,
           [flag.targetId],
         );
 
-        const o = oRows[0] || null;
         return res.json({
           targetType: "OUTCOME",
-          flagId: flag.flagId,
-          targetId: flag.targetId,
-          reason: flag.reason,
-          details: flag.details,
-          outcome: o,
+          flag,
+          reporter,
+          outcome: oRows[0] || null,
         });
       }
 
-      return res.json({
-        targetType: flag.targetType,
-        flagId: flag.flagId,
-        targetId: flag.targetId,
-        reason: flag.reason,
-        details: flag.details,
-      });
+      return res.json({ flag, reporter });
     } catch (err) {
       return res
         .status(500)

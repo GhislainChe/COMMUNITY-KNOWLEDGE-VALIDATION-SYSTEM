@@ -44,13 +44,18 @@ function typePill(type) {
 
 function actionOptionsFor(targetType) {
   const t = (targetType || "").toUpperCase();
+
   const base = [{ value: "NO_ACTION", label: "No action" }];
+
   if (t === "COMMENT")
     base.push({ value: "HIDE_COMMENT", label: "Hide comment" });
+
   if (t === "PRACTICE")
-    base.push({ value: "REMOVE_PRACTICE", label: "Remove practice" });
+    base.push({ value: "HIDE_PRACTICE", label: "Hide practice" });
+
   if (t === "OUTCOME")
     base.push({ value: "REJECT_OUTCOME", label: "Reject outcome" });
+
   return base;
 }
 
@@ -60,7 +65,7 @@ function actionIcon(action) {
       return <CheckCircle2 className="h-4 w-4" />;
     case "HIDE_COMMENT":
       return <EyeOff className="h-4 w-4" />;
-    case "REMOVE_PRACTICE":
+    case "HIDE_PRACTICE":
       return <Trash2 className="h-4 w-4" />;
     case "REJECT_OUTCOME":
       return <Ban className="h-4 w-4" />;
@@ -308,7 +313,7 @@ export default function ModerationPage() {
                   )}
 
                   <p className="text-xs text-slate-500 dark:text-slate-300/70">
-                    Reporter: {f.reporterUserId}
+                    Reporter: {f.reporterName} ({f.reporterEmail})
                   </p>
                 </div>
               </button>
@@ -354,43 +359,61 @@ export default function ModerationPage() {
 
             <div className="max-h-[70vh] overflow-y-auto p-4">
               {/* Optional preview */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
-                    Content preview (optional)
-                  </p>
-                  <FileSearch className="h-4 w-4 text-slate-400" />
-                </div>
+              {/* Content Preview */}
+              <div
+                className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm
+                dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+              >
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
+                  Content preview
+                </p>
 
-                {previewLoading ? (
-                  <div className="mt-2 space-y-2">
-                    <div className="h-4 w-[70%] rounded bg-slate-200 dark:bg-white/10" />
-                    <div className="h-4 w-[90%] rounded bg-slate-200 dark:bg-white/10" />
-                  </div>
-                ) : preview ? (
-                  <div className="mt-2 space-y-1">
-                    {preview.title && (
-                      <p className="font-semibold">{preview.title}</p>
-                    )}
-                    {preview.authorName && (
-                      <p className="text-xs text-slate-500 dark:text-slate-300/70">
-                        by {preview.authorName}
-                      </p>
-                    )}
-                    {preview.content && (
-                      <p className="mt-2">{preview.content}</p>
-                    )}
-                    {!preview.title && !preview.content && (
-                      <p className="mt-2 text-slate-500 dark:text-slate-300/70">
-                        Preview format not recognized.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="mt-2 text-slate-500 dark:text-slate-300/70">
-                    Preview endpoint not added yet (safe to ignore).
-                  </p>
+                {previewLoading && (
+                  <p className="mt-2 text-slate-500">Loading preview...</p>
                 )}
+
+                {!previewLoading && preview?.practice && (
+                  <>
+                    <p className="mt-2 font-semibold">
+                      {preview.practice.title}
+                    </p>
+                    <p className="mt-1 text-sm">
+                      {preview.practice.description}
+                    </p>
+                    <p className="mt-1 text-xs opacity-70">
+                      Status: {preview.practice.status}
+                    </p>
+                  </>
+                )}
+
+                {!previewLoading && preview?.comment && (
+                  <>
+                    <p className="mt-2 font-semibold">
+                      Comment by {preview.comment.authorName}
+                    </p>
+                    <p className="mt-1 text-sm">{preview.comment.content}</p>
+                    <p className="mt-1 text-xs opacity-70">
+                      Status: {preview.comment.status}
+                    </p>
+                  </>
+                )}
+
+                {!previewLoading && preview?.outcome && (
+                  <>
+                    <p className="mt-2 font-semibold">Outcome report</p>
+                    <p className="mt-1 text-sm">{preview.outcome.comment}</p>
+                    <p className="mt-1 text-xs opacity-70">
+                      Status: {preview.outcome.status}
+                    </p>
+                  </>
+                )}
+
+                {!previewLoading &&
+                  !preview?.practice &&
+                  !preview?.comment &&
+                  !preview?.outcome && (
+                    <p className="mt-2 text-slate-500">No preview available.</p>
+                  )}
               </div>
               {/* Quick actions */}
               <div className="mt-3 flex flex-wrap gap-2">
@@ -427,15 +450,20 @@ export default function ModerationPage() {
                 )}
               </div>
 
-              {openFlag.details && (
+              {preview?.reporter && (
                 <div
                   className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700
-                dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+  dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
                 >
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
-                    Reporter details
+                    Reporter
                   </p>
-                  <p className="mt-1">{openFlag.details}</p>
+                  <p className="mt-1 font-semibold">
+                    {preview.reporter.fullName}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-300/70">
+                    {preview.reporter.email}
+                  </p>
                 </div>
               )}
 
