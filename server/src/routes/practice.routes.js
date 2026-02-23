@@ -29,7 +29,6 @@ const upload = multer({ storage });
  */
 router.post("/", requireAuth, upload.single("image"), async (req, res) => {
   try {
-    // ✅ Now req.body works (multer parsed it)
     const {
       title,
       description,
@@ -53,8 +52,8 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
 
     const [result] = await pool.query(
       `INSERT INTO practices 
-   (userId, title, description, steps, overview, materials, season, location, imageUrl, cropTypeId, problemTypeId)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (userId, title, description, steps, overview, materials, season, location, imageUrl, cropTypeId, problemTypeId)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         title,
@@ -67,7 +66,7 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
         imageUrl || null,
         cropTypeId || null,
         problemTypeId || null,
-      ],
+      ]
     );
 
     return res.status(201).json({
@@ -76,9 +75,7 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
       imageUrl,
     });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
@@ -86,6 +83,7 @@ router.post("/", requireAuth, upload.single("image"), async (req, res) => {
  * GET /api/practices
  * Public: lists practices.
  * Supports a simple search with ?q=
+ * ✅ IMPORTANT: only ACTIVE practices should be visible publicly
  */
 router.get("/", async (req, res) => {
   try {
@@ -128,14 +126,27 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /api/practices/mine
+/**
+ * GET /api/practices/mine
+ * ✅ Return all my practices (ACTIVE + REMOVED) so user can still see their history
+ */
 router.get("/mine", requireAuth, async (req, res) => {
   try {
     const userId = req.user.userId;
 
     const [rows] = await pool.query(
       `
-      SELECT practiceId, title, description, status, createdAt
+      SELECT 
+        practiceId,
+        title,
+        description,
+        status,
+        createdAt,
+        imageUrl,
+        season,
+        location,
+        effectivenessScore,
+        confidenceLevel
       FROM practices
       WHERE userId = ?
       ORDER BY createdAt DESC
@@ -149,8 +160,10 @@ router.get("/mine", requireAuth, async (req, res) => {
   }
 });
 
-
-// GET /api/practices/applied
+/**
+ * GET /api/practices/applied
+ * ✅ Only show ACTIVE practices in bookmarks (so removed ones don't still appear)
+ */
 router.get("/applied", requireAuth, async (req, res) => {
   const userId = req.user.userId;
 
@@ -181,9 +194,10 @@ router.get("/applied", requireAuth, async (req, res) => {
       JOIN practices p ON p.practiceId = ap.practiceId
       JOIN users u ON u.userId = p.userId
       WHERE ap.userId = ?
+        AND p.status = 'ACTIVE'
       ORDER BY ap.appliedAt DESC
       `,
-      [userId],
+      [userId]
     );
 
     res.json({ applied: rows });
@@ -216,15 +230,14 @@ router.get("/:id/stats", requireAuth, async (req, res) => {
       FROM outcomeReports
       WHERE practiceId = ? AND status = 'VALID'
       `,
-      [practiceId],
+      [practiceId]
     );
 
     const s = rows[0] || {};
     const answered = Number(s.totalRecommendationAnswered || 0);
     const yes = Number(s.yesCount || 0);
 
-    const recommendedRate =
-      answered === 0 ? 0 : Math.round((yes / answered) * 100);
+    const recommendedRate = answered === 0 ? 0 : Math.round((yes / answered) * 100);
 
     return res.json({
       totalReports: Number(s.totalReports || 0),
@@ -239,15 +252,14 @@ router.get("/:id/stats", requireAuth, async (req, res) => {
       recommendedRate,
     });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
 /**
  * GET /api/practices/:practiceId
- * Public: returns a single practice detail + stats.
+ * Public: returns a single practice detail.
+ * ✅ blocks non-ACTIVE already (kept)
  */
 router.get("/:practiceId", async (req, res) => {
   try {
@@ -256,7 +268,6 @@ router.get("/:practiceId", async (req, res) => {
       return res.status(400).json({ message: "Invalid practiceId" });
     }
 
-    // 1) Get the practice + author info
     const [rows] = await pool.query(
       `SELECT 
          p.practiceId, p.userId, p.title, p.description, p.steps,
@@ -266,7 +277,7 @@ router.get("/:practiceId", async (req, res) => {
        FROM practices p
        JOIN users u ON u.userId = p.userId
        WHERE p.practiceId = ?`,
-      [practiceId],
+      [practiceId]
     );
 
     if (rows.length === 0) {
@@ -279,30 +290,27 @@ router.get("/:practiceId", async (req, res) => {
       return res.status(403).json({ message: "Practice is not available" });
     }
 
-    // 2) Get outcome counts (valid vs total)
     const [outcomeStats] = await pool.query(
       `SELECT
          COUNT(*) AS totalReports,
          SUM(CASE WHEN status='VALID' THEN 1 ELSE 0 END) AS validReports
        FROM outcomeReports
        WHERE practiceId = ?`,
-      [practiceId],
+      [practiceId]
     );
 
     const totalReports = Number(outcomeStats[0].totalReports || 0);
     const validReports = Number(outcomeStats[0].validReports || 0);
 
-    // 3) Get visible comments count (includes replies)
     const [commentStats] = await pool.query(
       `SELECT COUNT(*) AS visibleComments
        FROM comments
        WHERE practiceId = ? AND status='VISIBLE'`,
-      [practiceId],
+      [practiceId]
     );
 
     const visibleComments = Number(commentStats[0].visibleComments || 0);
 
-    // 4) Return one clean response
     return res.json({
       practice: {
         practiceId: practice.practiceId,
@@ -330,9 +338,7 @@ router.get("/:practiceId", async (req, res) => {
       },
     });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
@@ -345,52 +351,42 @@ router.post("/:id/apply", requireAuth, async (req, res) => {
   }
 
   try {
-    // 1. Check that practice exists
     const [practice] = await pool.query(
       "SELECT practiceId FROM practices WHERE practiceId = ? AND status = 'ACTIVE'",
-      [practiceId],
+      [practiceId]
     );
 
     if (practice.length === 0) {
       return res.status(404).json({ message: "Practice not found" });
     }
 
-    // 2. Apply practice
     await pool.query(
       "INSERT INTO applied_practices (userId, practiceId) VALUES (?, ?)",
-      [userId, practiceId],
+      [userId, practiceId]
     );
 
-    return res.json({
-      message: "Practice applied successfully",
-      practiceId,
-    });
+    return res.json({ message: "Practice applied successfully", practiceId });
   } catch (err) {
-    // 3. User already applied
     if (err.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({
-        message: "You already applied this practice",
-      });
+      return res.status(409).json({ message: "You already applied this practice" });
     }
 
-    return res.status(500).json({
-      message: "Server error",
-      error: err.message,
-    });
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
-
-// DELETE /api/practices/:id
+/**
+ * DELETE /api/practices/:id
+ * (kept as hard delete by owner)
+ */
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const practiceId = Number(req.params.id);
     const userId = req.user.userId;
 
-    const [rows] = await pool.query(
-      "SELECT userId FROM practices WHERE practiceId = ?",
-      [practiceId]
-    );
+    const [rows] = await pool.query("SELECT userId FROM practices WHERE practiceId = ?", [
+      practiceId,
+    ]);
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "Practice not found" });
@@ -400,15 +396,12 @@ router.delete("/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ message: "Not allowed" });
     }
 
-    await pool.query("DELETE FROM practices WHERE practiceId = ?", [
-      practiceId,
-    ]);
+    await pool.query("DELETE FROM practices WHERE practiceId = ?", [practiceId]);
 
     res.json({ message: "Practice deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
-
 
 module.exports = router;
