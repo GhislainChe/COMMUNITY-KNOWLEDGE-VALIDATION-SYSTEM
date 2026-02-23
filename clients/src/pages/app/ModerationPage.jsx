@@ -51,7 +51,7 @@ function actionOptionsFor(targetType) {
     base.push({ value: "HIDE_COMMENT", label: "Hide comment" });
 
   if (t === "PRACTICE")
-    base.push({ value: "HIDE_PRACTICE", label: "Hide practice" });
+    base.push({ value: "REMOVE_PRACTICE", label: "remove practice" });
 
   if (t === "OUTCOME")
     base.push({ value: "REJECT_OUTCOME", label: "Reject outcome" });
@@ -65,7 +65,7 @@ function actionIcon(action) {
       return <CheckCircle2 className="h-4 w-4" />;
     case "HIDE_COMMENT":
       return <EyeOff className="h-4 w-4" />;
-    case "HIDE_PRACTICE":
+    case "REMOVE_PRACTICE":
       return <Trash2 className="h-4 w-4" />;
     case "REJECT_OUTCOME":
       return <Ban className="h-4 w-4" />;
