@@ -186,10 +186,8 @@ router.patch(
           });
         }
 
-        // ✅ IMPORTANT: your practices.status is ACTIVE/...
-        // Use HIDDEN instead of REMOVED to avoid enum issues.
         await conn.query(
-          "UPDATE practices SET status='HIDDEN' WHERE practiceId=?",
+          "UPDATE practices SET status='REMOVED' WHERE practiceId=?",
           [flag.targetId],
         );
       }
