@@ -140,6 +140,7 @@ router.patch(
         "REMOVE_PRACTICE",
         "REJECT_OUTCOME",
       ];
+
       if (!allowedActions.includes(actionTaken)) {
         conn.release();
         return res.status(400).json({ message: "Invalid actionTaken" });
@@ -149,7 +150,7 @@ router.patch(
 
       const [flagRows] = await conn.query(
         "SELECT * FROM flags WHERE flagId=? AND status='PENDING'",
-        [flagId],
+        [flagId]
       );
 
       if (flagRows.length === 0) {
@@ -162,7 +163,7 @@ router.patch(
 
       const flag = flagRows[0];
 
-      // Take action based on type
+      // ACTIONS
       if (actionTaken === "HIDE_COMMENT") {
         if (flag.targetType !== "COMMENT") {
           await conn.rollback();
@@ -171,13 +172,20 @@ router.patch(
             message: "This action can only be used for COMMENT reports",
           });
         }
-        await conn.query(
+
+        const [r] = await conn.query(
           "UPDATE comments SET status='HIDDEN' WHERE commentId=?",
-          [flag.targetId],
+          [flag.targetId]
         );
+
+        if (r.affectedRows === 0) {
+          await conn.rollback();
+          conn.release();
+          return res.status(404).json({ message: "Comment not found" });
+        }
       }
 
-      if (actionTaken === "HIDE_PRACTICE") {
+      if (actionTaken === "REMOVE_PRACTICE") {
         if (flag.targetType !== "PRACTICE") {
           await conn.rollback();
           conn.release();
@@ -186,10 +194,16 @@ router.patch(
           });
         }
 
-        await conn.query(
+        const [r] = await conn.query(
           "UPDATE practices SET status='REMOVED' WHERE practiceId=?",
-          [flag.targetId],
+          [flag.targetId]
         );
+
+        if (r.affectedRows === 0) {
+          await conn.rollback();
+          conn.release();
+          return res.status(404).json({ message: "Practice not found" });
+        }
       }
 
       if (actionTaken === "REJECT_OUTCOME") {
@@ -201,42 +215,19 @@ router.patch(
           });
         }
 
-        // Assumes table outcomeReports exists
-        await conn.query(
+        const [r] = await conn.query(
           "UPDATE outcomeReports SET status='REJECTED' WHERE reportId=?",
-          [flag.targetId],
+          [flag.targetId]
         );
 
-        // Recalculate practice score after rejecting an outcome
-        const [prRows] = await conn.query(
-          "SELECT practiceId FROM outcomeReports WHERE reportId=?",
-          [flag.targetId],
-        );
-
-        if (prRows.length > 0) {
-          const practiceId = prRows[0].practiceId;
-
-          const [avgRows] = await conn.query(
-            `SELECT AVG(outcomeScore) AS avgScore, COUNT(*) AS countReports
-             FROM outcomeReports
-             WHERE practiceId=? AND status='VALID'`,
-            [practiceId],
-          );
-
-          const avgScore =
-            avgRows[0].avgScore === null ? 0 : Number(avgRows[0].avgScore);
-          const countReports = Number(avgRows[0].countReports);
-          const confidenceLevel =
-            countReports >= 10 ? "HIGH" : countReports >= 3 ? "MEDIUM" : "LOW";
-
-          await conn.query(
-            "UPDATE practices SET effectivenessScore=?, confidenceLevel=? WHERE practiceId=?",
-            [avgScore, confidenceLevel, practiceId],
-          );
+        if (r.affectedRows === 0) {
+          await conn.rollback();
+          conn.release();
+          return res.status(404).json({ message: "Outcome report not found" });
         }
       }
 
-      // Mark flag resolved (this becomes your audit log)
+      // Resolve flag
       await conn.query(
         `UPDATE flags
          SET status='RESOLVED',
@@ -245,25 +236,19 @@ router.patch(
              reviewNote=?,
              reviewedAt=NOW()
          WHERE flagId=?`,
-        [req.user.userId, actionTaken, reviewNote || null, flagId],
+        [req.user.userId, actionTaken, reviewNote || null, flagId]
       );
 
       await conn.commit();
       conn.release();
 
-      return res.json({
-        message: "Flag reviewed and resolved",
-        flagId,
-        actionTaken,
-      });
+      return res.json({ message: "Resolved", flagId, actionTaken });
     } catch (err) {
       await conn.rollback();
       conn.release();
-      return res
-        .status(500)
-        .json({ message: "Server error", error: err.message });
+      return res.status(500).json({ message: "Server error", error: err.message });
     }
-  },
+  }
 );
 
 router.get(
