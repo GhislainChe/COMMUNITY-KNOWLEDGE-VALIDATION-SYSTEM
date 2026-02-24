@@ -26,6 +26,7 @@ export default function DiscussionsPage() {
   const [comments, setComments] = useState([]);
   const [loadingThread, setLoadingThread] = useState(false);
   const [errorThread, setErrorThread] = useState("");
+  const [notifications, setNotifications] = useState([]);
 
   // Sending
   const [message, setMessage] = useState("");
@@ -116,21 +117,36 @@ export default function DiscussionsPage() {
         setLoadingList(true);
         setErrorList("");
 
-        const res = await api.get(`/discussions/mine`);
-        const raw = res.data;
+        // 1) threads (existing)
+        let threadsData = [];
+        try {
+          const res = await api.get(`/discussions/mine`);
+          const raw = res.data;
 
-        const data =
-          (Array.isArray(raw) && raw) ||
-          raw?.threads ||
-          raw?.data ||
-          raw?.results ||
-          [];
+          threadsData =
+            (Array.isArray(raw) && raw) ||
+            raw?.threads ||
+            raw?.data ||
+            raw?.results ||
+            [];
+        } catch {
+          // keep empty if endpoint not available
+          threadsData = [];
+        }
 
-        setThreads(Array.isArray(data) ? data : []);
+        setThreads(Array.isArray(threadsData) ? threadsData : []);
+
+        // 2) notifications (new)
+        try {
+          const nRes = await api.get("/notifications/mine");
+          setNotifications(nRes.data?.notifications || []);
+        } catch {
+          setNotifications([]);
+        }
       } catch (err) {
         setErrorList(
           err?.response?.data?.message ||
-            "Discussion list endpoint not available yet (we will add it).",
+            "Error loading discussions/notifications.",
         );
       } finally {
         setLoadingList(false);
@@ -244,6 +260,39 @@ export default function DiscussionsPage() {
             </div>
           )}
 
+          {/* Notifications (system/moderation messages) */}
+          {!loadingList && !errorList && notifications.length > 0 && (
+            <div className="mt-4 space-y-3">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
+                System messages
+              </p>
+
+              {notifications.map((n) => (
+                <button
+                  key={n.notificationId}
+                  type="button"
+                  onClick={() => {
+                    if (n.linkUrl) navigate(n.linkUrl);
+                  }}
+                  className="w-full rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left shadow-sm transition hover:bg-amber-100
+        dark:border-amber-500/20 dark:bg-amber-500/10 dark:hover:bg-amber-500/15"
+                >
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {n.title}
+                  </p>
+
+                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
+                    {n.message}
+                  </p>
+
+                  <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-300/70">
+                    {n.createdAt ? new Date(n.createdAt).toLocaleString() : ""}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+
           {!loadingList && !errorList && threads.length > 0 && (
             <div className="mt-6 space-y-3">
               {threads.map((t) => (
@@ -335,8 +384,8 @@ export default function DiscussionsPage() {
 
         {comments.map((c) => {
           const isMine = Number(c.userId) === Number(user?.userId);
+          const isSystem = c.isModerationNotice;
 
-          // Reply preview
           const parent = c.parentCommentId
             ? commentMap.get(String(c.parentCommentId))
             : null;
@@ -354,93 +403,67 @@ export default function DiscussionsPage() {
             >
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                  isMine
-                    ? "bg-emerald-600 text-white"
-                    : "bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-slate-100"
+                  isSystem
+                    ? "bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
+                    : isMine
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-slate-100"
                 }`}
               >
                 {!isMine && (
                   <p className="mb-1 text-[11px] font-semibold opacity-80">
-                    {c.authorName || "User"}
+                    {isSystem ? "System • Moderation" : c.authorName || "User"}
                   </p>
                 )}
 
-                {/* ✅ Show replied-to message */}
-                {c.parentCommentId ? (
-                  <div
-                    className={`mb-1 rounded-xl px-3 py-2 text-[12px] leading-snug ${
-                      isMine
-                        ? "bg-white/15 text-white"
-                        : "bg-black/5 text-slate-700 dark:bg-white/10 dark:text-slate-200"
-                    }`}
-                  >
-                    <p
-                      className={`text-[11px] font-semibold ${
-                        isMine
-                          ? "text-white/90"
-                          : "text-slate-500 dark:text-slate-300/70"
-                      }`}
-                    >
+                {c.parentCommentId && !isSystem && (
+                  <div className="mb-1 rounded-xl px-3 py-2 text-[12px] leading-snug bg-black/5 dark:bg-white/10">
+                    <p className="text-[11px] font-semibold opacity-70">
                       Replying to {parentName}
                     </p>
-
-                    <p
-                      className={`mt-1 line-clamp-2 ${
-                        isMine
-                          ? "text-white/90"
-                          : "text-slate-700 dark:text-slate-200"
-                      }`}
-                    >
+                    <p className="mt-1 line-clamp-2">
                       {parentText || "Original message"}
                     </p>
                   </div>
-                ) : null}
+                )}
 
                 <p className="whitespace-pre-wrap">{c.content}</p>
 
-                <div className="mt-1 flex items-center justify-between gap-3">
-                  <p className="text-[10px] opacity-70">
-                    {c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}
-                  </p>
+                {!isSystem && (
+                  <div className="mt-1 flex items-center justify-between gap-3">
+                    <p className="text-[10px] opacity-70">
+                      {c.createdAt
+                        ? new Date(c.createdAt).toLocaleString()
+                        : ""}
+                    </p>
 
-                  <div className="flex items-center gap-2">
-                    {/* ✅ Report button */}
-                    <button
-                      type="button"
-                      onClick={() => openReportComment(c)}
-                      className={`rounded-lg px-2 py-1 text-[11px] font-semibold inline-flex items-center gap-1 ${
-                        isMine
-                          ? "bg-white/15 text-white hover:bg-white/20"
-                          : "bg-black/10 text-slate-700 hover:bg-black/15 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15"
-                      }`}
-                      title="Report this comment"
-                    >
-                      <Flag className="h-3.5 w-3.5" />
-                      Report
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openReportComment(c)}
+                        className="rounded-lg px-2 py-1 text-[11px] font-semibold bg-black/10 dark:bg-white/10"
+                      >
+                        Report
+                      </button>
 
-                    {/* Reply button */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReplyTo({
-                          commentId: c.commentId,
-                          userId: c.userId,
-                          authorName: c.authorName || "User",
-                          content: c.content,
-                        });
-                        setReplyText("");
-                      }}
-                      className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${
-                        isMine
-                          ? "bg-white/15 text-white hover:bg-white/20"
-                          : "bg-black/10 text-slate-700 hover:bg-black/15 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15"
-                      }`}
-                    >
-                      Reply
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReplyTo({
+                            commentId: c.commentId,
+                            userId: c.userId,
+                            authorName: c.authorName || "User",
+                            content: c.content,
+                          });
+                          setReplyText("");
+                        }}
+                        className="rounded-lg px-2 py-1 text-[11px] font-semibold bg-black/10 dark:bg-white/10"
+                      >
+                        Reply
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           );
