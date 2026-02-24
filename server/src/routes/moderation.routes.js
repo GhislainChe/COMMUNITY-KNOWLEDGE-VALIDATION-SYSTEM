@@ -150,7 +150,7 @@ router.patch(
 
       const [flagRows] = await conn.query(
         "SELECT * FROM flags WHERE flagId=? AND status='PENDING'",
-        [flagId]
+        [flagId],
       );
 
       if (flagRows.length === 0) {
@@ -175,8 +175,28 @@ router.patch(
 
         const [r] = await conn.query(
           "UPDATE comments SET status='HIDDEN' WHERE commentId=?",
-          [flag.targetId]
+          [flag.targetId],
         );
+        const [cRows] = await conn.query(
+          "SELECT userId, practiceId FROM comments WHERE commentId=?",
+          [flag.targetId],
+        );
+
+        if (cRows.length > 0) {
+          const commentOwnerId = cRows[0].userId;
+          const practiceId = cRows[0].practiceId;
+
+          await conn.query(
+            `INSERT INTO notifications (userId, title, message, linkUrl, type)
+     VALUES (?, ?, ?, ?, 'MODERATION')`,
+            [
+              commentOwnerId,
+              "Your comment was removed",
+              "A moderator removed your comment for violating community guidelines.",
+              `/app/discussions?practiceId=${practiceId}`,
+            ],
+          );
+        }
 
         if (r.affectedRows === 0) {
           await conn.rollback();
@@ -196,8 +216,28 @@ router.patch(
 
         const [r] = await conn.query(
           "UPDATE practices SET status='REMOVED' WHERE practiceId=?",
-          [flag.targetId]
+          [flag.targetId],
         );
+        const [pRows] = await conn.query(
+          "SELECT userId, title FROM practices WHERE practiceId=?",
+          [flag.targetId],
+        );
+
+        if (pRows.length > 0) {
+          const ownerId = pRows[0].userId;
+          const practiceTitle = pRows[0].title;
+
+          await conn.query(
+            `INSERT INTO notifications (userId, title, message, linkUrl, type)
+     VALUES (?, ?, ?, ?, 'MODERATION')`,
+            [
+              ownerId,
+              "Your practice was removed",
+              `Your practice "${practiceTitle}" was removed by a moderator for policy reasons.`,
+              "/app/practices",
+            ],
+          );
+        }
 
         if (r.affectedRows === 0) {
           await conn.rollback();
@@ -217,7 +257,7 @@ router.patch(
 
         const [r] = await conn.query(
           "UPDATE outcomeReports SET status='REJECTED' WHERE reportId=?",
-          [flag.targetId]
+          [flag.targetId],
         );
 
         if (r.affectedRows === 0) {
@@ -236,7 +276,7 @@ router.patch(
              reviewNote=?,
              reviewedAt=NOW()
          WHERE flagId=?`,
-        [req.user.userId, actionTaken, reviewNote || null, flagId]
+        [req.user.userId, actionTaken, reviewNote || null, flagId],
       );
 
       await conn.commit();
@@ -246,9 +286,11 @@ router.patch(
     } catch (err) {
       await conn.rollback();
       conn.release();
-      return res.status(500).json({ message: "Server error", error: err.message });
+      return res
+        .status(500)
+        .json({ message: "Server error", error: err.message });
     }
-  }
+  },
 );
 
 router.get(

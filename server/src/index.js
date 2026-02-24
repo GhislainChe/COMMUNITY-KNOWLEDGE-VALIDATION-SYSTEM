@@ -15,6 +15,7 @@ const adminRoutes = require("./routes/admin.routes");
 const path = require("path");
 const metaRoutes = require("./routes/meta.routes");
 const discoverRoutes = require("./routes/discover.routes");
+const notificationRoutes = require("./routes/notification.routes");
 
 const app = express();
 app.use(cors());
@@ -47,6 +48,7 @@ app.use("/api", moderationRoutes);
 app.use("/api", adminRoutes);
 app.use("/api/meta", metaRoutes);
 app.use("/api", discoverRoutes);
+app.use("/api", notificationRoutes);
 
 
 console.log("DB_PASSWORD loaded?", process.env.DB_PASSWORD ? "YES" : "NO");
