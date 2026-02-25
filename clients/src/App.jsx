@@ -13,8 +13,9 @@ import DiscussionsPage from "./pages/app/DiscussionsPage";
 import AboutPage from "./pages/app/AboutPage";
 import ProfilePage from "./pages/app/ProfilePage";
 
-// ✅ NEW
+// ✅ Moderator
 import ModerationPage from "./pages/app/ModerationPage";
+import ModerationAuditPage from "./pages/app/ModerationAuditPage";
 
 export default function App() {
   return (
@@ -36,8 +37,9 @@ export default function App() {
         <Route path="about" element={<AboutPage />} />
         <Route path="profile" element={<ProfilePage />} />
 
-        {/* ✅ NEW route */}
+        {/* ✅ Moderator routes */}
         <Route path="moderation" element={<ModerationPage />} />
+        <Route path="moderation/audit" element={<ModerationAuditPage />} />
       </Route>
 
       {/* Fallback */}
