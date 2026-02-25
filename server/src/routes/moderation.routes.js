@@ -72,6 +72,154 @@ router.get(
   },
 );
 
+// ✅ NEW: Moderation Stats
+// GET /api/moderation/stats?range=7d|30d|90d
+router.get(
+  "/moderation/stats",
+  requireAuth,
+  requireRole("MODERATOR", "ADMIN"),
+  async (req, res) => {
+    try {
+      const range = String(req.query.range || "7d").toLowerCase();
+      const days = range === "90d" ? 90 : range === "30d" ? 30 : 7;
+
+      // 1) KPIs
+      const [kpiRows] = await pool.query(
+        `
+        SELECT
+          COUNT(*) AS totalFlags,
+          SUM(CASE WHEN status='PENDING' THEN 1 ELSE 0 END) AS pendingFlags,
+          SUM(CASE WHEN status='RESOLVED' THEN 1 ELSE 0 END) AS resolvedFlags,
+
+          AVG(
+            CASE
+              WHEN status='RESOLVED' AND reviewedAt IS NOT NULL
+              THEN TIMESTAMPDIFF(HOUR, createdAt, reviewedAt)
+              ELSE NULL
+            END
+          ) AS avgResolutionHours,
+
+          SUM(
+            CASE
+              WHEN status='RESOLVED' AND reviewedAt IS NOT NULL
+                   AND TIMESTAMPDIFF(HOUR, createdAt, reviewedAt) <= 24
+              THEN 1 ELSE 0
+            END
+          ) AS resolvedUnder24h
+        FROM flags
+        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        `,
+        [days],
+      );
+
+      const k = kpiRows[0] || {};
+      const totalFlags = Number(k.totalFlags || 0);
+      const resolvedFlags = Number(k.resolvedFlags || 0);
+      const resolvedUnder24h = Number(k.resolvedUnder24h || 0);
+
+      const resolvedUnder24hPct =
+        resolvedFlags === 0 ? 0 : Math.round((resolvedUnder24h / resolvedFlags) * 100);
+
+      // 2) Breakdown by type
+      const [byType] = await pool.query(
+        `
+        SELECT targetType, COUNT(*) AS count
+        FROM flags
+        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        GROUP BY targetType
+        ORDER BY count DESC
+        `,
+        [days],
+      );
+
+      // 3) Breakdown by reason
+      const [byReason] = await pool.query(
+        `
+        SELECT reason, COUNT(*) AS count
+        FROM flags
+        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        GROUP BY reason
+        ORDER BY count DESC
+        `,
+        [days],
+      );
+
+      // 4) Trend (daily counts)
+      const [trend] = await pool.query(
+        `
+        SELECT DATE(createdAt) AS day, COUNT(*) AS count
+        FROM flags
+        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        GROUP BY DATE(createdAt)
+        ORDER BY day ASC
+        `,
+        [days],
+      );
+
+      // 5) Top reported targets
+      const [topTargets] = await pool.query(
+        `
+        SELECT
+          f.targetType,
+          f.targetId,
+          COUNT(*) AS count,
+          MAX(f.createdAt) AS lastFlagAt,
+
+          p.title AS practiceTitle,
+          LEFT(c.content, 140) AS commentPreview
+        FROM flags f
+        LEFT JOIN practices p ON (f.targetType='PRACTICE' AND p.practiceId = f.targetId)
+        LEFT JOIN comments c ON (f.targetType='COMMENT' AND c.commentId = f.targetId)
+        WHERE f.createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        GROUP BY f.targetType, f.targetId
+        ORDER BY count DESC, lastFlagAt DESC
+        LIMIT 8
+        `,
+        [days],
+      );
+
+      // 6) Top reporters (who reports the most)
+      const [topReporters] = await pool.query(
+        `
+        SELECT
+          f.reporterUserId,
+          u.fullName AS reporterName,
+          u.email AS reporterEmail,
+          COUNT(*) AS count,
+          MAX(f.createdAt) AS lastReportAt
+        FROM flags f
+        LEFT JOIN users u ON u.userId = f.reporterUserId
+        WHERE f.createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        GROUP BY f.reporterUserId
+        ORDER BY count DESC, lastReportAt DESC
+        LIMIT 8
+        `,
+        [days],
+      );
+
+      return res.json({
+        range,
+        days,
+        kpis: {
+          totalFlags,
+          pendingFlags: Number(k.pendingFlags || 0),
+          resolvedFlags,
+          avgResolutionHours:
+            k.avgResolutionHours === null ? null : Number(k.avgResolutionHours),
+          resolvedUnder24hPct,
+        },
+        byType,
+        byReason,
+        trend,
+        topTargets,
+        topReporters,
+      });
+    } catch (err) {
+      return res.status(500).json({ message: "Server error", error: err.message });
+    }
+  },
+);
+
 /**
  * GET /api/moderation/audit
  * Moderator action history (uses resolved flags as audit trail)
