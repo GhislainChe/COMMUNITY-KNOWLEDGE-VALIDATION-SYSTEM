@@ -10,7 +10,6 @@ import {
   Trash2,
   Ban,
   MessageSquareWarning,
-  FileSearch,
 } from "lucide-react";
 
 function formatDate(dt) {
@@ -44,15 +43,11 @@ function typePill(type) {
 
 function actionOptionsFor(targetType) {
   const t = (targetType || "").toUpperCase();
-
   const base = [{ value: "NO_ACTION", label: "No action" }];
 
-  if (t === "COMMENT")
-    base.push({ value: "HIDE_COMMENT", label: "Hide comment" });
-
+  if (t === "COMMENT") base.push({ value: "HIDE_COMMENT", label: "Hide comment" });
   if (t === "PRACTICE")
-    base.push({ value: "REMOVE_PRACTICE", label: "remove practice" });
-
+    base.push({ value: "REMOVE_PRACTICE", label: "Remove practice" });
   if (t === "OUTCOME")
     base.push({ value: "REJECT_OUTCOME", label: "Reject outcome" });
 
@@ -60,7 +55,7 @@ function actionOptionsFor(targetType) {
 }
 
 function actionIcon(action) {
-  switch (action) {
+  switch ((action || "").toUpperCase()) {
     case "NO_ACTION":
       return <CheckCircle2 className="h-4 w-4" />;
     case "HIDE_COMMENT":
@@ -90,17 +85,62 @@ function SkeletonRow() {
   );
 }
 
+function StatusTabs({ value, onChange, counts }) {
+  const tabs = [
+    { key: "PENDING", label: "Pending" },
+    { key: "RESOLVED", label: "Resolved" },
+    { key: "ALL", label: "All" },
+  ];
+
+  return (
+    <div className="mt-3 inline-flex overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
+      {tabs.map((t) => {
+        const active = value === t.key;
+        const count = counts?.[t.key] ?? null;
+        return (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => onChange(t.key)}
+            className={`px-3 py-2 text-sm font-semibold transition ${
+              active
+                ? "bg-emerald-600 text-white"
+                : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/10"
+            }`}
+          >
+            {t.label}
+            {typeof count === "number" ? (
+              <span
+                className={`ml-2 inline-flex min-w-[28px] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  active
+                    ? "bg-white/15 text-white"
+                    : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-100"
+                }`}
+              >
+                {count}
+              </span>
+            ) : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ModerationPage() {
   const [flags, setFlags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pageErr, setPageErr] = useState("");
+
+  // ✅ Filter tab
+  const [statusFilter, setStatusFilter] = useState("PENDING"); // PENDING|RESOLVED|ALL
 
   // review modal state
   const [openFlag, setOpenFlag] = useState(null);
   const [actionTaken, setActionTaken] = useState("NO_ACTION");
   const [reviewNote, setReviewNote] = useState("");
 
-  // optional preview (won’t break if endpoint not available)
+  // optional preview
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
@@ -108,36 +148,64 @@ export default function ModerationPage() {
   const [saveErr, setSaveErr] = useState("");
   const [saveMsg, setSaveMsg] = useState("");
 
-  async function loadFlags() {
+  // quick counts for tabs (best effort)
+  const [counts, setCounts] = useState({ PENDING: null, RESOLVED: null, ALL: null });
+
+  async function loadFlags(filter = statusFilter) {
     try {
       setLoading(true);
       setPageErr("");
-      const res = await api.get("/moderation/flags");
+
+      const res = await api.get(`/moderation/flags?status=${filter}`);
       setFlags(res.data?.flags || []);
     } catch (err) {
-      setPageErr(
-        err?.response?.data?.message || "Failed to load moderation flags.",
-      );
+      setPageErr(err?.response?.data?.message || "Failed to load moderation flags.");
     } finally {
       setLoading(false);
     }
   }
 
+  async function loadCounts() {
+    // Best effort: fetch 3 small calls so the tabs can show counts
+    // If you want it optimized later, we can add a /moderation/flags/counts endpoint.
+    try {
+      const [p, r, a] = await Promise.all([
+        api.get("/moderation/flags?status=PENDING"),
+        api.get("/moderation/flags?status=RESOLVED"),
+        api.get("/moderation/flags?status=ALL"),
+      ]);
+
+      setCounts({
+        PENDING: (p.data?.flags || []).length,
+        RESOLVED: (r.data?.flags || []).length,
+        ALL: (a.data?.flags || []).length,
+      });
+    } catch {
+      setCounts({ PENDING: null, RESOLVED: null, ALL: null });
+    }
+  }
+
   useEffect(() => {
-    loadFlags();
+    loadFlags("PENDING");
+    loadCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const pendingCount = useMemo(() => flags.length, [flags]);
+  // Reload when tab changes
+  useEffect(() => {
+    loadFlags(statusFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter]);
+
+  const listCount = useMemo(() => flags.length, [flags]);
 
   async function tryLoadPreview(flagId) {
-    // Optional endpoint (add later): GET /api/moderation/flags/:flagId/details
     try {
       setPreviewLoading(true);
       setPreview(null);
       const res = await api.get(`/moderation/flags/${flagId}/details`);
       setPreview(res.data || null);
     } catch {
-      // ignore if not implemented
       setPreview(null);
     } finally {
       setPreviewLoading(false);
@@ -146,11 +214,15 @@ export default function ModerationPage() {
 
   function openReviewModal(flag) {
     setOpenFlag(flag);
-    setActionTaken("NO_ACTION");
-    setReviewNote("");
+
+    // If resolved, show what happened
+    setActionTaken(flag?.actionTaken || "NO_ACTION");
+    setReviewNote(flag?.reviewNote || "");
+
     setSaveErr("");
     setSaveMsg("");
     setPreview(null);
+
     if (flag?.flagId) tryLoadPreview(flag.flagId);
   }
 
@@ -163,9 +235,16 @@ export default function ModerationPage() {
     setPreviewLoading(false);
   }
 
+  const isReadOnly = useMemo(() => {
+    // In resolved/all views, flag may already be resolved
+    const st = (openFlag?.status || "").toUpperCase();
+    return st === "RESOLVED";
+  }, [openFlag]);
+
   async function submitReview(e) {
     e.preventDefault();
     if (!openFlag?.flagId) return;
+    if (isReadOnly) return;
 
     try {
       setSaving(true);
@@ -178,7 +257,12 @@ export default function ModerationPage() {
       });
 
       setSaveMsg("Resolved ✅");
+
+      // Remove from list (only makes sense in pending list)
       setFlags((prev) => prev.filter((f) => f.flagId !== openFlag.flagId));
+
+      // Update counts after moderation action
+      loadCounts();
 
       setTimeout(() => {
         closeReviewModal();
@@ -236,13 +320,23 @@ export default function ModerationPage() {
               </div>
             </div>
 
+            {/* ✅ Tabs */}
+            <StatusTabs
+              value={statusFilter}
+              onChange={(v) => setStatusFilter(v)}
+              counts={counts}
+            />
+
             <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-600/15 px-3 py-1 text-xs font-semibold text-emerald-800 dark:text-emerald-200">
-              Pending reports: {pendingCount}
+              Showing: {statusFilter} • Count: {listCount}
             </div>
           </div>
 
           <button
-            onClick={loadFlags}
+            onClick={() => {
+              loadFlags(statusFilter);
+              loadCounts();
+            }}
             className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50
             dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
           >
@@ -256,7 +350,11 @@ export default function ModerationPage() {
       <div className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10">
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Pending flags
+            {statusFilter === "PENDING"
+              ? "Pending flags"
+              : statusFilter === "RESOLVED"
+                ? "Resolved flags"
+                : "All flags"}
           </p>
           <div className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300/70">
             <MessageSquareWarning className="h-4 w-4" />
@@ -266,7 +364,7 @@ export default function ModerationPage() {
 
         {flags.length === 0 ? (
           <div className="p-4 text-sm text-slate-600 dark:text-slate-300/80">
-            No pending reports
+            No records found for {statusFilter}.
           </div>
         ) : (
           <div className="divide-y divide-slate-200 dark:divide-white/10">
@@ -288,13 +386,25 @@ export default function ModerationPage() {
                     </span>
 
                     <span
-                      className={`rounded-full px-3 py-1 text-[11px] font-semibold ${reasonBadge(f.reason)}`}
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold ${reasonBadge(
+                        f.reason,
+                      )}`}
                     >
                       {f.reason}
                     </span>
 
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700 dark:bg-white/10 dark:text-slate-100">
                       Target ID: {f.targetId}
+                    </span>
+
+                    <span
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
+                        (f.status || "").toUpperCase() === "RESOLVED"
+                          ? "bg-emerald-600/15 text-emerald-800 dark:text-emerald-200"
+                          : "bg-amber-600/15 text-amber-800 dark:text-amber-200"
+                      }`}
+                    >
+                      {f.status}
                     </span>
 
                     <span className="ml-auto text-[11px] text-slate-500 dark:text-slate-300/70">
@@ -313,7 +423,19 @@ export default function ModerationPage() {
                   )}
 
                   <p className="text-xs text-slate-500 dark:text-slate-300/70">
-                    Reporter: {f.reporterName} ({f.reporterEmail})
+                    Reporter: {f.reporterName || f.reporterUserId}
+                    {f.moderatorName ? (
+                      <>
+                        {" "}
+                        • Reviewed by: <span className="font-semibold">{f.moderatorName}</span>
+                      </>
+                    ) : null}
+                    {f.reviewedAt ? (
+                      <>
+                        {" "}
+                        • Reviewed at: <span className="font-semibold">{formatDate(f.reviewedAt)}</span>
+                      </>
+                    ) : null}
                   </p>
                 </div>
               </button>
@@ -324,7 +446,7 @@ export default function ModerationPage() {
 
       {/* Review Modal */}
       {openFlag && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-2 sm:items-center sm:p-4">
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={closeReviewModal}
@@ -341,9 +463,14 @@ export default function ModerationPage() {
                   {openFlag.targetType} • Target {openFlag.targetId}
                 </p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-                  Reason:{" "}
-                  <span className="font-semibold">{openFlag.reason}</span>
+                  Reason: <span className="font-semibold">{openFlag.reason}</span>
                 </p>
+
+                {(openFlag.status || "").toUpperCase() === "RESOLVED" && (
+                  <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-200">
+                    This flag is already resolved.
+                  </p>
+                )}
               </div>
 
               <button
@@ -358,7 +485,6 @@ export default function ModerationPage() {
             </div>
 
             <div className="max-h-[70vh] overflow-y-auto p-4">
-              {/* Optional preview */}
               {/* Content Preview */}
               <div
                 className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm
@@ -374,12 +500,8 @@ export default function ModerationPage() {
 
                 {!previewLoading && preview?.practice && (
                   <>
-                    <p className="mt-2 font-semibold">
-                      {preview.practice.title}
-                    </p>
-                    <p className="mt-1 text-sm">
-                      {preview.practice.description}
-                    </p>
+                    <p className="mt-2 font-semibold">{preview.practice.title}</p>
+                    <p className="mt-1 text-sm">{preview.practice.description}</p>
                     <p className="mt-1 text-xs opacity-70">
                       Status: {preview.practice.status}
                     </p>
@@ -415,62 +537,52 @@ export default function ModerationPage() {
                     <p className="mt-2 text-slate-500">No preview available.</p>
                   )}
               </div>
-              {/* Quick actions */}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {preview?.practice?.practiceId && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      window.open(
-                        `/app/practices/${preview.practice.practiceId}`,
-                        "_blank",
-                      )
-                    }
-                    className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50
-      dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                  >
-                    Open practice
-                  </button>
-                )}
 
-                {preview?.comment?.practiceId && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      window.open(
-                        `/app/discussions?practiceId=${preview.comment.practiceId}`,
-                        "_blank",
-                      )
-                    }
-                    className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50
-      dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                  >
-                    Open discussion
-                  </button>
-                )}
-              </div>
-
+              {/* Reporter */}
               {preview?.reporter && (
                 <div
                   className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700
-  dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+                  dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
                 >
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
                     Reporter
                   </p>
-                  <p className="mt-1 font-semibold">
-                    {preview.reporter.fullName}
-                  </p>
+                  <p className="mt-1 font-semibold">{preview.reporter.fullName}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-300/70">
                     {preview.reporter.email}
                   </p>
                 </div>
               )}
 
+              {/* If resolved: show audit details */}
+              {(openFlag.status || "").toUpperCase() === "RESOLVED" && (
+                <div
+                  className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900
+                  dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-100"
+                >
+                  <p className="text-xs font-semibold opacity-80">Resolution</p>
+                  <p className="mt-1">
+                    Action taken:{" "}
+                    <span className="font-semibold">{openFlag.actionTaken || "—"}</span>
+                  </p>
+                  <p className="mt-1">
+                    Reviewed at:{" "}
+                    <span className="font-semibold">
+                      {openFlag.reviewedAt ? formatDate(openFlag.reviewedAt) : "—"}
+                    </span>
+                  </p>
+                  {openFlag.reviewNote ? (
+                    <p className="mt-2 text-sm">
+                      Note: <span className="font-semibold">{openFlag.reviewNote}</span>
+                    </p>
+                  ) : null}
+                </div>
+              )}
+
               {saveErr && (
                 <div
                   className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700
-                dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200"
+                  dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200"
                 >
                   {saveErr}
                 </div>
@@ -479,12 +591,13 @@ export default function ModerationPage() {
               {saveMsg && (
                 <div
                   className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800
-                dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200"
+                  dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200"
                 >
                   {saveMsg}
                 </div>
               )}
 
+              {/* Form (disabled if resolved) */}
               <form onSubmit={submitReview} className="mt-4 space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
@@ -493,8 +606,9 @@ export default function ModerationPage() {
                   <select
                     value={actionTaken}
                     onChange={(e) => setActionTaken(e.target.value)}
+                    disabled={isReadOnly}
                     className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                    focus:ring-2 focus:ring-emerald-400 disabled:opacity-70 dark:border-white/10 dark:bg-white/5"
                   >
                     {actionOptionsFor(openFlag.targetType).map((o) => (
                       <option key={o.value} value={o.value}>
@@ -516,8 +630,9 @@ export default function ModerationPage() {
                     value={reviewNote}
                     onChange={(e) => setReviewNote(e.target.value)}
                     rows={3}
+                    disabled={isReadOnly}
                     className="mt-1 w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-                    focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+                    focus:ring-2 focus:ring-emerald-400 disabled:opacity-70 dark:border-white/10 dark:bg-white/5"
                     placeholder="Short note for audit trail..."
                   />
                 </div>
@@ -529,17 +644,19 @@ export default function ModerationPage() {
                     className="w-full sm:w-auto rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50
                     dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                   >
-                    Cancel
+                    Close
                   </button>
 
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
-                  >
-                    {actionIcon(actionTaken)}
-                    {saving ? "Saving..." : "Resolve"}
-                  </button>
+                  {!isReadOnly && (
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
+                    >
+                      {actionIcon(actionTaken)}
+                      {saving ? "Saving..." : "Resolve"}
+                    </button>
+                  )}
                 </div>
               </form>
             </div>
