@@ -11,6 +11,7 @@ import {
   Moon,
   Bookmark,
   ShieldAlert,
+  ShieldCheck, // ✅ NEW
 } from "lucide-react";
 import { logout } from "../utils/auth";
 import { getTheme, toggleTheme, applyTheme } from "../utils/theme";
@@ -56,6 +57,7 @@ export default function AppLayout() {
     if (path.includes("/app/discussions")) return "Discussions";
     if (path.includes("/app/about")) return "About";
     if (path.includes("/app/profile")) return "Profile";
+    if (path.includes("/app/moderation/audit")) return "Moderation Audit";
     if (path.includes("/app/moderation")) return "Moderation";
     return "Dashboard";
   }, [location.pathname]);
@@ -132,15 +134,29 @@ export default function AppLayout() {
 
         {/* ✅ Only for MODERATOR / ADMIN */}
         {isModerator && (
-          <NavLink
-            to="moderation"
-            onClick={onClick}
-            className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : linkInactive}`
-            }
-          >
-            <ShieldAlert className="h-5 w-5" /> Moderation
-          </NavLink>
+          <>
+            <NavLink
+              to="moderation"
+              onClick={onClick}
+              end
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              <ShieldAlert className="h-5 w-5" /> Moderation
+            </NavLink>
+
+            {/* ✅ NEW: Audit */}
+            <NavLink
+              to="moderation/audit"
+              onClick={onClick}
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              <ShieldCheck className="h-5 w-5" /> Audit
+            </NavLink>
+          </>
         )}
       </>
     );
