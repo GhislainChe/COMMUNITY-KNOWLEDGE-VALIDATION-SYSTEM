@@ -356,7 +356,8 @@ router.patch(
       const allowedActions = [
         "NO_ACTION",
         "HIDE_COMMENT",
-        "REMOVE_PRACTICE",
+        "HIDE_PRACTICE",
+        // "REMOVE_PRACTICE", 
         "REJECT_OUTCOME",
       ];
 
