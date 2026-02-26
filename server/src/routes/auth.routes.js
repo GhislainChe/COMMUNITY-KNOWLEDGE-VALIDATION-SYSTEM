@@ -83,7 +83,7 @@ router.post("/login", async (req, res) => {
     const user = rows[0];
 
     if (user.userStatus !== "ACTIVE") {
-      return res.status(403).json({ message: "Account is not active" });
+      return res.status(403).json({ message: "Your Account has been suspended" });
     }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
