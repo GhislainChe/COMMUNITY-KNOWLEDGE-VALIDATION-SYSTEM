@@ -230,6 +230,45 @@ router.get(
   requireRole("MODERATOR", "ADMIN"),
   async (req, res) => {
     try {
+      const limit = Math.min(Number(req.query.limit || 200), 500);
+      const offset = Math.max(Number(req.query.offset || 0), 0);
+
+      const q = String(req.query.q || "").trim();
+      const targetType = String(req.query.targetType || "ALL").toUpperCase();
+      const actionTaken = String(req.query.actionTaken || "ALL").toUpperCase();
+      const days = Number(req.query.days || 30); // default last 30 days
+      const safeDays = Number.isFinite(days) && days > 0 ? Math.min(days, 365) : 30;
+
+      const where = [`f.status='RESOLVED'`, `f.reviewedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)`];
+      const params = [safeDays];
+
+      if (targetType !== "ALL") {
+        where.push(`f.targetType = ?`);
+        params.push(targetType);
+      }
+
+      if (actionTaken !== "ALL") {
+        where.push(`f.actionTaken = ?`);
+        params.push(actionTaken);
+      }
+
+      if (q) {
+        // search in note, moderator name, reporter name, ids
+        where.push(`
+          (
+            f.reviewNote LIKE ?
+            OR mu.fullName LIKE ?
+            OR ru.fullName LIKE ?
+            OR CAST(f.flagId AS CHAR) LIKE ?
+            OR CAST(f.targetId AS CHAR) LIKE ?
+          )
+        `);
+        const like = `%${q}%`;
+        params.push(like, like, like, like, like);
+      }
+
+      const whereSql = `WHERE ${where.join(" AND ")}`;
+
       const [rows] = await pool.query(
         `
         SELECT
@@ -246,17 +285,35 @@ router.get(
         FROM flags f
         LEFT JOIN users mu ON mu.userId = f.reviewedBy
         LEFT JOIN users ru ON ru.userId = f.reporterUserId
-        WHERE f.status='RESOLVED'
+        ${whereSql}
         ORDER BY f.reviewedAt DESC
-        LIMIT 200
+        LIMIT ? OFFSET ?
         `,
+        [...params, limit, offset],
       );
 
-      return res.json({ audit: rows });
+      const [countRows] = await pool.query(
+        `
+        SELECT COUNT(*) AS total
+        FROM flags f
+        LEFT JOIN users mu ON mu.userId = f.reviewedBy
+        LEFT JOIN users ru ON ru.userId = f.reporterUserId
+        ${whereSql}
+        `,
+        params,
+      );
+
+      return res.json({
+        audit: rows,
+        pagination: {
+          total: Number(countRows?.[0]?.total || 0),
+          limit,
+          offset,
+          days: safeDays,
+        },
+      });
     } catch (err) {
-      return res
-        .status(500)
-        .json({ message: "Server error", error: err.message });
+      return res.status(500).json({ message: "Server error", error: err.message });
     }
   },
 );

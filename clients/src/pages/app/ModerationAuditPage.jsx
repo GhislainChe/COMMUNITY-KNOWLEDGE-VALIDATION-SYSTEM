@@ -1,8 +1,6 @@
-// clients/src/pages/app/ModerationAuditPage.jsx
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../../api/api";
-import { ShieldCheck, RefreshCw, ArrowLeft, Search } from "lucide-react";
+import { ShieldCheck, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 
 function formatDate(dt) {
   try {
@@ -12,70 +10,77 @@ function formatDate(dt) {
   }
 }
 
-function pillClass(value) {
-  const v = String(value || "").toUpperCase();
-  if (v === "PRACTICE") return "bg-emerald-600/15 text-emerald-800 dark:text-emerald-200";
-  if (v === "COMMENT") return "bg-indigo-600/15 text-indigo-800 dark:text-indigo-200";
-  if (v === "OUTCOME") return "bg-amber-600/15 text-amber-800 dark:text-amber-200";
-  if (v === "SPAM") return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
-  if (v === "ABUSIVE") return "bg-red-500/15 text-red-800 dark:text-red-200";
-  if (v === "FALSE_INFO") return "bg-amber-500/15 text-amber-800 dark:text-amber-200";
-  if (v.includes("HIDE") || v.includes("REMOVE") || v.includes("REJECT"))
-    return "bg-emerald-600/15 text-emerald-800 dark:text-emerald-200";
+function pill(cls, text) {
+  return (
+    <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${cls}`}>
+      {text}
+    </span>
+  );
+}
+
+function typePill(type) {
+  const t = String(type || "").toUpperCase();
+  if (t === "PRACTICE") return "bg-emerald-600/15 text-emerald-800 dark:text-emerald-200";
+  if (t === "COMMENT") return "bg-indigo-600/15 text-indigo-800 dark:text-indigo-200";
+  if (t === "OUTCOME") return "bg-amber-600/15 text-amber-800 dark:text-amber-200";
+  return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
+}
+
+function actionPill(action) {
+  const a = String(action || "").toUpperCase();
+  if (a === "HIDE_COMMENT") return "bg-indigo-600/15 text-indigo-800 dark:text-indigo-200";
+  if (a === "HIDE_PRACTICE") return "bg-rose-600/15 text-rose-800 dark:text-rose-200";
+  if (a === "REJECT_OUTCOME") return "bg-amber-600/15 text-amber-800 dark:text-amber-200";
+  if (a === "NO_ACTION") return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
   return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
 }
 
 export default function ModerationAuditPage() {
-  const navigate = useNavigate();
-  const [audit, setAudit] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pageErr, setPageErr] = useState("");
+  const [err, setErr] = useState("");
+  const [rows, setRows] = useState([]);
 
-  // filters
   const [q, setQ] = useState("");
-  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [days, setDays] = useState(30);
+  const [targetType, setTargetType] = useState("ALL");
+  const [actionTaken, setActionTaken] = useState("ALL");
 
-  async function loadAudit() {
+  const [limit] = useState(50);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  const page = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
+  const pages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
+
+  async function load() {
     try {
       setLoading(true);
-      setPageErr("");
-      const res = await api.get("/moderation/audit");
-      setAudit(res.data?.audit || []);
-    } catch (err) {
-      setPageErr(err?.response?.data?.message || "Failed to load audit history.");
+      setErr("");
+
+      const res = await api.get(
+        `/moderation/audit?limit=${limit}&offset=${offset}&days=${days}&targetType=${targetType}&actionTaken=${actionTaken}&q=${encodeURIComponent(
+          q.trim(),
+        )}`,
+      );
+
+      setRows(res.data?.audit || []);
+      setTotal(Number(res.data?.pagination?.total || 0));
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to load audit log.");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadAudit();
-  }, []);
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offset, days, targetType, actionTaken]);
 
-  const filtered = useMemo(() => {
-    const qq = q.trim().toLowerCase();
-
-    return (audit || []).filter((a) => {
-      const t = String(a.targetType || "").toUpperCase();
-      if (typeFilter !== "ALL" && t !== typeFilter) return false;
-
-      if (!qq) return true;
-
-      const hay = [
-        a.flagId,
-        a.targetId,
-        a.reason,
-        a.actionTaken,
-        a.reviewNote,
-        a.moderatorName,
-        a.reporterName,
-      ]
-        .map((x) => String(x || "").toLowerCase())
-        .join(" ");
-
-      return hay.includes(qq);
-    });
-  }, [audit, q, typeFilter]);
+  function applySearch() {
+    setOffset(0);
+    load();
+  }
 
   return (
     <div className="p-3 space-y-4 text-slate-900 dark:text-slate-100">
@@ -84,35 +89,24 @@ export default function ModerationAuditPage() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => navigate("/app/moderation")}
-                className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white hover:bg-slate-50
-                dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                title="Back"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-600 text-white">
                 <ShieldCheck className="h-5 w-5" />
               </div>
-
               <div className="min-w-0">
-                <h1 className="truncate font-heading text-xl font-bold">Moderation Audit</h1>
+                <h1 className="truncate font-heading text-xl font-bold">Audit Log</h1>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
-                  History of resolved reports (audit trail).
+                  View resolved moderation actions (with filters).
                 </p>
               </div>
             </div>
 
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-600/15 px-3 py-1 text-xs font-semibold text-emerald-800 dark:text-emerald-200">
-              Total resolved: {audit.length}
+            <div className="mt-3 text-xs text-slate-500 dark:text-slate-300/70">
+              Showing <b>{rows.length}</b> of <b>{total}</b> results
             </div>
           </div>
 
           <button
-            onClick={loadAudit}
+            onClick={load}
             className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50
             dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
           >
@@ -122,93 +116,141 @@ export default function ModerationAuditPage() {
         </div>
 
         {/* Filters */}
-        <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_180px]">
+        <div className="mt-4 grid gap-2 md:grid-cols-[1fr_150px_160px_180px_auto]">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by flagId, targetId, action, reason, moderator, reporter..."
-              className="w-full rounded-2xl border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm outline-none
+              placeholder="Search by note, moderator, reporter, IDs…"
+              className="w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-3 py-2 text-sm outline-none
               focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
             />
           </div>
 
           <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none
-            focus:ring-2 focus:ring-emerald-400 dark:border-white/10 dark:bg-white/5"
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
+            hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+          >
+            <option value={7}>Last 7 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={90}>Last 90 days</option>
+            <option value={365}>Last 365 days</option>
+          </select>
+
+          <select
+            value={targetType}
+            onChange={(e) => setTargetType(e.target.value)}
+            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
+            hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
           >
             <option value="ALL">All types</option>
             <option value="PRACTICE">Practice</option>
             <option value="COMMENT">Comment</option>
             <option value="OUTCOME">Outcome</option>
           </select>
+
+          <select
+            value={actionTaken}
+            onChange={(e) => setActionTaken(e.target.value)}
+            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
+            hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+          >
+            <option value="ALL">All actions</option>
+            <option value="NO_ACTION">No action</option>
+            <option value="HIDE_COMMENT">Hide comment</option>
+            <option value="HIDE_PRACTICE">Hide practice</option>
+            <option value="REJECT_OUTCOME">Reject outcome</option>
+          </select>
+
+          <button
+            onClick={applySearch}
+            className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+          >
+            Apply
+          </button>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Resolved flags
-          </p>
-          <p className="text-xs text-slate-500 dark:text-slate-300/70">
-            Showing {filtered.length} result(s)
-          </p>
-        </div>
-
+      {/* Table */}
+      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 overflow-hidden">
         {loading ? (
-          <div className="p-4 text-sm text-slate-500">Loading audit...</div>
-        ) : pageErr ? (
-          <div className="p-4 text-sm text-red-600">{pageErr}</div>
-        ) : filtered.length === 0 ? (
-          <div className="p-4 text-sm text-slate-600 dark:text-slate-300/80">
-            No resolved flags found.
-          </div>
+          <div className="p-4 text-sm text-slate-500 dark:text-slate-300/70">Loading…</div>
+        ) : err ? (
+          <div className="p-4 text-sm text-red-600">{err}</div>
+        ) : rows.length === 0 ? (
+          <div className="p-4 text-sm text-slate-500 dark:text-slate-300/70">No results.</div>
         ) : (
-          <div className="divide-y divide-slate-200 dark:divide-white/10">
-            {filtered.map((a) => (
-              <div key={a.flagId} className="p-4 space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${pillClass(a.targetType)}`}>
-                    {a.targetType}
-                  </span>
+          <div className="overflow-x-auto">
+            <table className="min-w-[980px] w-full text-left">
+              <thead className="bg-slate-50 dark:bg-white/5">
+                <tr className="text-xs text-slate-500 dark:text-slate-300/70">
+                  <th className="px-4 py-3 font-semibold">Flag</th>
+                  <th className="px-4 py-3 font-semibold">Target</th>
+                  <th className="px-4 py-3 font-semibold">Reason</th>
+                  <th className="px-4 py-3 font-semibold">Action</th>
+                  <th className="px-4 py-3 font-semibold">Moderator</th>
+                  <th className="px-4 py-3 font-semibold">Reporter</th>
+                  <th className="px-4 py-3 font-semibold">Reviewed at</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-white/10">
+                {rows.map((r) => (
+                  <tr key={r.flagId} className="text-sm hover:bg-slate-50 dark:hover:bg-white/5">
+                    <td className="px-4 py-3 font-semibold">#{r.flagId}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {pill(typePill(r.targetType), r.targetType)}
+                        {pill("bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-100", `ID: ${r.targetId}`)}
+                      </div>
+                      {r.reviewNote ? (
+                        <p className="mt-1 text-[12px] text-slate-600 dark:text-slate-300/80 line-clamp-2">
+                          Note: {r.reviewNote}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">{r.reason || "—"}</td>
+                    <td className="px-4 py-3">{pill(actionPill(r.actionTaken), r.actionTaken || "—")}</td>
+                    <td className="px-4 py-3">{r.moderatorName || "—"}</td>
+                    <td className="px-4 py-3">{r.reporterName || "—"}</td>
+                    <td className="px-4 py-3">{formatDate(r.reviewedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${pillClass(a.reason)}`}>
-                    {a.reason}
-                  </span>
+        {/* Pagination */}
+        {!loading && !err && total > 0 && (
+          <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm dark:border-white/10">
+            <p className="text-xs text-slate-500 dark:text-slate-300/70">
+              Page <b>{page}</b> of <b>{pages}</b>
+            </p>
 
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${pillClass(a.actionTaken)}`}>
-                    {a.actionTaken}
-                  </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={offset === 0}
+                onClick={() => setOffset((o) => Math.max(0, o - limit))}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-60
+                dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Prev
+              </button>
 
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-700 dark:bg-white/10 dark:text-slate-100">
-                    Flag #{a.flagId} • Target {a.targetId}
-                  </span>
-
-                  <span className="ml-auto text-[11px] text-slate-500 dark:text-slate-300/70">
-                    {formatDate(a.reviewedAt)}
-                  </span>
-                </div>
-
-                {a.reviewNote ? (
-                  <p className="text-sm text-slate-700 dark:text-slate-200">
-                    <span className="font-semibold">Note:</span> {a.reviewNote}
-                  </p>
-                ) : (
-                  <p className="text-sm text-slate-500 dark:text-slate-300/70">
-                    No review note.
-                  </p>
-                )}
-
-                <p className="text-xs text-slate-500 dark:text-slate-300/70">
-                  Moderator: <span className="font-semibold">{a.moderatorName || "—"}</span> • Reporter:{" "}
-                  <span className="font-semibold">{a.reporterName || "—"}</span>
-                </p>
-              </div>
-            ))}
+              <button
+                disabled={offset + limit >= total}
+                onClick={() => setOffset((o) => o + limit)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-60
+                dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
