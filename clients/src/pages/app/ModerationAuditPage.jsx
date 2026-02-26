@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api/api";
-import { ShieldCheck, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ShieldCheck,
+  Search,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+} from "lucide-react";
 
 function formatDate(dt) {
   try {
@@ -20,19 +27,70 @@ function pill(cls, text) {
 
 function typePill(type) {
   const t = String(type || "").toUpperCase();
-  if (t === "PRACTICE") return "bg-emerald-600/15 text-emerald-800 dark:text-emerald-200";
-  if (t === "COMMENT") return "bg-indigo-600/15 text-indigo-800 dark:text-indigo-200";
-  if (t === "OUTCOME") return "bg-amber-600/15 text-amber-800 dark:text-amber-200";
+  if (t === "PRACTICE")
+    return "bg-emerald-600/15 text-emerald-800 dark:text-emerald-200";
+  if (t === "COMMENT")
+    return "bg-indigo-600/15 text-indigo-800 dark:text-indigo-200";
+  if (t === "OUTCOME")
+    return "bg-amber-600/15 text-amber-800 dark:text-amber-200";
   return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
 }
 
 function actionPill(action) {
   const a = String(action || "").toUpperCase();
-  if (a === "HIDE_COMMENT") return "bg-indigo-600/15 text-indigo-800 dark:text-indigo-200";
-  if (a === "HIDE_PRACTICE") return "bg-rose-600/15 text-rose-800 dark:text-rose-200";
-  if (a === "REJECT_OUTCOME") return "bg-amber-600/15 text-amber-800 dark:text-amber-200";
-  if (a === "NO_ACTION") return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
+  if (a === "HIDE_COMMENT")
+    return "bg-indigo-600/15 text-indigo-800 dark:text-indigo-200";
+  if (a === "HIDE_PRACTICE")
+    return "bg-rose-600/15 text-rose-800 dark:text-rose-200";
+  if (a === "REJECT_OUTCOME")
+    return "bg-amber-600/15 text-amber-800 dark:text-amber-200";
+  if (a === "NO_ACTION")
+    return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
   return "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-slate-100";
+}
+
+function escapeCsv(val) {
+  if (val === null || val === undefined) return "";
+  const s = String(val);
+  if (s.includes(",") || s.includes("\n") || s.includes('"')) {
+    return `"${s.replaceAll('"', '""')}"`;
+  }
+  return s;
+}
+
+function downloadCsv(filename, rows) {
+  const headers = [
+    "flagId",
+    "targetType",
+    "targetId",
+    "reason",
+    "actionTaken",
+    "reviewNote",
+    "moderatorName",
+    "reporterName",
+    "reviewedAt",
+  ];
+
+  const lines = [
+    headers.join(","),
+    ...rows.map((r) =>
+      headers
+        .map((h) => escapeCsv(r?.[h]))
+        .join(","),
+    ),
+  ];
+
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
 }
 
 export default function ModerationAuditPage() {
@@ -82,18 +140,26 @@ export default function ModerationAuditPage() {
     load();
   }
 
+  function onDownload() {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const filename = `audit-log-${stamp}.csv`;
+    downloadCsv(filename, rows);
+  }
+
   return (
     <div className="p-3 space-y-4 text-slate-900 dark:text-slate-100">
       {/* Header */}
       <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-600 text-white">
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <h1 className="truncate font-heading text-xl font-bold">Audit Log</h1>
+                <h1 className="truncate font-heading text-xl font-bold">
+                  Audit Log
+                </h1>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
                   View resolved moderation actions (with filters).
                 </p>
@@ -105,19 +171,33 @@ export default function ModerationAuditPage() {
             </div>
           </div>
 
-          <button
-            onClick={load}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50
-            dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+            <button
+              onClick={onDownload}
+              disabled={rows.length === 0}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-60
+              dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 sm:w-auto"
+              title="Download as CSV (opens in Excel)"
+            >
+              <Download className="h-4 w-4" />
+              Download CSV
+            </button>
+
+            <button
+              onClick={load}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50
+              dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 sm:w-auto"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="mt-4 grid gap-2 md:grid-cols-[1fr_150px_160px_180px_auto]">
-          <div className="relative">
+        {/* Filters (RESPONSIVE) */}
+        <div className="mt-4 flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+          {/* Search */}
+          <div className="relative w-full md:flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               value={q}
@@ -128,46 +208,50 @@ export default function ModerationAuditPage() {
             />
           </div>
 
-          <select
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
-            hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-          >
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-            <option value={365}>Last 365 days</option>
-          </select>
+          {/* Dropdowns */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:gap-3">
+            <select
+              value={days}
+              onChange={(e) => setDays(Number(e.target.value))}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
+              hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 md:w-[150px]"
+            >
+              <option value={7}>Last 7 days</option>
+              <option value={30}>Last 30 days</option>
+              <option value={90}>Last 90 days</option>
+              <option value={365}>Last 365 days</option>
+            </select>
 
-          <select
-            value={targetType}
-            onChange={(e) => setTargetType(e.target.value)}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
-            hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-          >
-            <option value="ALL">All types</option>
-            <option value="PRACTICE">Practice</option>
-            <option value="COMMENT">Comment</option>
-            <option value="OUTCOME">Outcome</option>
-          </select>
+            <select
+              value={targetType}
+              onChange={(e) => setTargetType(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
+              hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 md:w-[160px]"
+            >
+              <option value="ALL">All types</option>
+              <option value="PRACTICE">Practice</option>
+              <option value="COMMENT">Comment</option>
+              <option value="OUTCOME">Outcome</option>
+            </select>
 
-          <select
-            value={actionTaken}
-            onChange={(e) => setActionTaken(e.target.value)}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
-            hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-          >
-            <option value="ALL">All actions</option>
-            <option value="NO_ACTION">No action</option>
-            <option value="HIDE_COMMENT">Hide comment</option>
-            <option value="HIDE_PRACTICE">Hide practice</option>
-            <option value="REJECT_OUTCOME">Reject outcome</option>
-          </select>
+            <select
+              value={actionTaken}
+              onChange={(e) => setActionTaken(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
+              hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 md:w-[180px]"
+            >
+              <option value="ALL">All actions</option>
+              <option value="NO_ACTION">No action</option>
+              <option value="HIDE_COMMENT">Hide comment</option>
+              <option value="HIDE_PRACTICE">Hide practice</option>
+              <option value="REJECT_OUTCOME">Reject outcome</option>
+            </select>
+          </div>
 
+          {/* Apply */}
           <button
             onClick={applySearch}
-            className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            className="w-full rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 md:w-auto md:min-w-[110px]"
           >
             Apply
           </button>
@@ -177,11 +261,15 @@ export default function ModerationAuditPage() {
       {/* Table */}
       <div className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 overflow-hidden">
         {loading ? (
-          <div className="p-4 text-sm text-slate-500 dark:text-slate-300/70">Loading…</div>
+          <div className="p-4 text-sm text-slate-500 dark:text-slate-300/70">
+            Loading…
+          </div>
         ) : err ? (
           <div className="p-4 text-sm text-red-600">{err}</div>
         ) : rows.length === 0 ? (
-          <div className="p-4 text-sm text-slate-500 dark:text-slate-300/70">No results.</div>
+          <div className="p-4 text-sm text-slate-500 dark:text-slate-300/70">
+            No results.
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-[980px] w-full text-left">
@@ -196,25 +284,41 @@ export default function ModerationAuditPage() {
                   <th className="px-4 py-3 font-semibold">Reviewed at</th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                 {rows.map((r) => (
-                  <tr key={r.flagId} className="text-sm hover:bg-slate-50 dark:hover:bg-white/5">
+                  <tr
+                    key={r.flagId}
+                    className="text-sm hover:bg-slate-50 dark:hover:bg-white/5"
+                  >
                     <td className="px-4 py-3 font-semibold">#{r.flagId}</td>
+
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-2">
                         {pill(typePill(r.targetType), r.targetType)}
-                        {pill("bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-100", `ID: ${r.targetId}`)}
+                        {pill(
+                          "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-100",
+                          `ID: ${r.targetId}`,
+                        )}
                       </div>
+
                       {r.reviewNote ? (
                         <p className="mt-1 text-[12px] text-slate-600 dark:text-slate-300/80 line-clamp-2">
                           Note: {r.reviewNote}
                         </p>
                       ) : null}
                     </td>
+
                     <td className="px-4 py-3">{r.reason || "—"}</td>
-                    <td className="px-4 py-3">{pill(actionPill(r.actionTaken), r.actionTaken || "—")}</td>
+
+                    <td className="px-4 py-3">
+                      {pill(actionPill(r.actionTaken), r.actionTaken || "—")}
+                    </td>
+
                     <td className="px-4 py-3">{r.moderatorName || "—"}</td>
+
                     <td className="px-4 py-3">{r.reporterName || "—"}</td>
+
                     <td className="px-4 py-3">{formatDate(r.reviewedAt)}</td>
                   </tr>
                 ))}
@@ -225,12 +329,12 @@ export default function ModerationAuditPage() {
 
         {/* Pagination */}
         {!loading && !err && total > 0 && (
-          <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm dark:border-white/10">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-t border-slate-200 px-4 py-3 text-sm dark:border-white/10">
             <p className="text-xs text-slate-500 dark:text-slate-300/70">
               Page <b>{page}</b> of <b>{pages}</b>
             </p>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-end gap-2">
               <button
                 disabled={offset === 0}
                 onClick={() => setOffset((o) => Math.max(0, o - limit))}

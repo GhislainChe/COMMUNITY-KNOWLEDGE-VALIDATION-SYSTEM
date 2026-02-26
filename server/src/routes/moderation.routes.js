@@ -118,7 +118,9 @@ router.get(
       const resolvedUnder24h = Number(k.resolvedUnder24h || 0);
 
       const resolvedUnder24hPct =
-        resolvedFlags === 0 ? 0 : Math.round((resolvedUnder24h / resolvedFlags) * 100);
+        resolvedFlags === 0
+          ? 0
+          : Math.round((resolvedUnder24h / resolvedFlags) * 100);
 
       // 2) Breakdown by type
       const [byType] = await pool.query(
@@ -215,7 +217,9 @@ router.get(
         topReporters,
       });
     } catch (err) {
-      return res.status(500).json({ message: "Server error", error: err.message });
+      return res
+        .status(500)
+        .json({ message: "Server error", error: err.message });
     }
   },
 );
@@ -237,9 +241,13 @@ router.get(
       const targetType = String(req.query.targetType || "ALL").toUpperCase();
       const actionTaken = String(req.query.actionTaken || "ALL").toUpperCase();
       const days = Number(req.query.days || 30); // default last 30 days
-      const safeDays = Number.isFinite(days) && days > 0 ? Math.min(days, 365) : 30;
+      const safeDays =
+        Number.isFinite(days) && days > 0 ? Math.min(days, 365) : 30;
 
-      const where = [`f.status='RESOLVED'`, `f.reviewedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)`];
+      const where = [
+        `f.status='RESOLVED'`,
+        `f.reviewedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)`,
+      ];
       const params = [safeDays];
 
       if (targetType !== "ALL") {
@@ -280,6 +288,10 @@ router.get(
           f.actionTaken,
           f.reviewNote,
           f.reviewedAt,
+          f.isUndone,
+          f.undoneBy,
+          f.undoneAt,
+          f.undoNote,
           mu.fullName AS moderatorName,
           ru.fullName AS reporterName
         FROM flags f
@@ -313,7 +325,9 @@ router.get(
         },
       });
     } catch (err) {
-      return res.status(500).json({ message: "Server error", error: err.message });
+      return res
+        .status(500)
+        .json({ message: "Server error", error: err.message });
     }
   },
 );
@@ -582,6 +596,146 @@ router.get(
 
       return res.json({ flag, reporter });
     } catch (err) {
+      return res
+        .status(500)
+        .json({ message: "Server error", error: err.message });
+    }
+  },
+);
+
+// POST /api/moderation/flags/:flagId/undo
+router.post(
+  "/moderation/flags/:flagId/undo",
+  requireAuth,
+  requireRole("MODERATOR", "ADMIN"),
+  async (req, res) => {
+    const conn = await pool.getConnection();
+    try {
+      const flagId = Number(req.params.flagId);
+      if (!Number.isInteger(flagId) || flagId <= 0) {
+        conn.release();
+        return res.status(400).json({ message: "Invalid flagId" });
+      }
+
+      const { undoNote } = req.body || {};
+
+      await conn.beginTransaction();
+
+      const [flagRows] = await conn.query(
+        `SELECT *
+         FROM flags
+         WHERE flagId=? AND status='RESOLVED'
+         LIMIT 1`,
+        [flagId],
+      );
+
+      if (flagRows.length === 0) {
+        await conn.rollback();
+        conn.release();
+        return res.status(404).json({ message: "Resolved flag not found" });
+      }
+
+      const flag = flagRows[0];
+
+      if (!flag.actionTaken || flag.actionTaken === "NO_ACTION") {
+        await conn.rollback();
+        conn.release();
+        return res
+          .status(400)
+          .json({ message: "Nothing to undo for this flag" });
+      }
+
+      if (Number(flag.isUndone) === 1) {
+        await conn.rollback();
+        conn.release();
+        return res
+          .status(400)
+          .json({ message: "This action is already undone" });
+      }
+
+      // ===== Undo by actionTaken =====
+      if (flag.actionTaken === "HIDE_COMMENT") {
+        // comment back to VISIBLE
+        await conn.query(
+          "UPDATE comments SET status='VISIBLE' WHERE commentId=?",
+          [flag.targetId],
+        );
+      }
+
+      if (
+        flag.actionTaken === "HIDE_PRACTICE" ||
+        flag.actionTaken === "REMOVE_PRACTICE"
+      ) {
+        // practice back to ACTIVE
+        await conn.query(
+          "UPDATE practices SET status='ACTIVE' WHERE practiceId=?",
+          [flag.targetId],
+        );
+      }
+
+      if (flag.actionTaken === "REJECT_OUTCOME") {
+        // outcome back to VALID
+        await conn.query(
+          "UPDATE outcomeReports SET status='VALID' WHERE reportId=?",
+          [flag.targetId],
+        );
+
+        // recalc score
+        const [prRows] = await conn.query(
+          "SELECT practiceId FROM outcomeReports WHERE reportId=?",
+          [flag.targetId],
+        );
+
+        if (prRows.length > 0) {
+          const practiceId = prRows[0].practiceId;
+
+          const [avgRows] = await conn.query(
+            `SELECT AVG(outcomeScore) AS avgScore, COUNT(*) AS countReports
+             FROM outcomeReports
+             WHERE practiceId=? AND status='VALID'`,
+            [practiceId],
+          );
+
+          const avgScore =
+            avgRows[0].avgScore === null ? 0 : Number(avgRows[0].avgScore);
+          const countReports = Number(avgRows[0].countReports);
+          const confidenceLevel =
+            countReports >= 10 ? "HIGH" : countReports >= 3 ? "MEDIUM" : "LOW";
+
+          await conn.query(
+            "UPDATE practices SET effectivenessScore=?, confidenceLevel=? WHERE practiceId=?",
+            [avgScore, confidenceLevel, practiceId],
+          );
+        }
+      }
+
+      // Mark flag as undone (audit)
+      await conn.query(
+        `UPDATE flags
+         SET isUndone=1,
+             undoneBy=?,
+             undoneAt=NOW(),
+             undoNote=?
+         WHERE flagId=?`,
+        [req.user.userId, undoNote?.trim() || null, flagId],
+      );
+
+      // OPTIONAL: notify content owner (recommended)
+      // If you already have helper in notification.routes.js, reuse it here
+      // Otherwise tell me and I will plug it in properly.
+      // Example:
+      // await createNotification(conn, targetOwnerId, "Moderation action undone", "...", "/app/discussions?practiceId=...");
+
+      await conn.commit();
+      conn.release();
+
+      return res.json({
+        message: "Undo completed",
+        flagId,
+      });
+    } catch (err) {
+      await conn.rollback();
+      conn.release();
       return res
         .status(500)
         .json({ message: "Server error", error: err.message });
