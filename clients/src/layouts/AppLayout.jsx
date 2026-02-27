@@ -65,7 +65,7 @@ export default function AppLayout() {
     if (path.includes("/app/profile")) return "Profile";
     if (path.includes("/app/moderation/audit")) return "Moderation Audit";
     if (path.includes("/app/moderation")) return "Moderation";
-    return "Dashboard";
+    return "AdminDashboard";
   }, [location.pathname]);
 
   const linkBase =
@@ -193,12 +193,12 @@ export default function AppLayout() {
             </div>
 
             {/* optional: show tab */}
-            {/* <div className="hidden md:block">
-              <span className="text-sm text-slate-400">/</span>{" "}
+            <div className="hidden md:block">
+              <span className="text-sm text-slate-400"></span>{" "}
               <span className="font-heading text-lg font-semibold">
                 {currentTab}
               </span>
-            </div> */}
+            </div>
           </div>
 
           {/* Right: actions */}

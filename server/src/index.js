@@ -16,6 +16,7 @@ const path = require("path");
 const metaRoutes = require("./routes/meta.routes");
 const discoverRoutes = require("./routes/discover.routes");
 const notificationRoutes = require("./routes/notification.routes");
+const adminAnalyticsRoutes = require("./routes/admin.analytics.routes");
 
 const app = express();
 app.use(cors());
@@ -46,6 +47,7 @@ app.use("/api", discussionsRoutes);
 app.use("/api", flagRoutes);
 app.use("/api", moderationRoutes);
 app.use("/api", adminRoutes);
+app.use("/api", adminAnalyticsRoutes);
 app.use("/api/meta", metaRoutes);
 app.use("/api", discoverRoutes);
 app.use("/api", notificationRoutes);
