@@ -5,9 +5,15 @@ import { BarChart3, RefreshCw, Download } from "lucide-react";
 function Stat({ label, value, sub }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-      <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">{label}</p>
+      <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
+        {label}
+      </p>
       <p className="mt-1 text-2xl font-extrabold">{value}</p>
-      {sub ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-300/70">{sub}</p> : null}
+      {sub ? (
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-300/70">
+          {sub}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -24,7 +30,9 @@ function BarList({ title, items }) {
 
       <div className="mt-4 space-y-3">
         {items.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-300/70">No data</p>
+          <p className="text-sm text-slate-500 dark:text-slate-300/70">
+            No data
+          </p>
         ) : (
           items.map((x, idx) => {
             const pct = Math.round((Number(x.count || 0) / max) * 100);
@@ -55,8 +63,11 @@ export default function AdminAnalyticsPage() {
   const [days, setDays] = useState(30);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [downloading, setDownloading] = useState("");
 
   const [data, setData] = useState(null);
+
+  const stamp = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   async function load() {
     try {
@@ -75,6 +86,49 @@ export default function AdminAnalyticsPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days]);
+
+  // ✅ EXPORTS
+  async function exportAnalytics() {
+    try {
+      setDownloading("analytics");
+      await downloadCsvFromApi(
+        `/admin/exports/analytics.csv?days=${days}`,
+        `admin-analytics-${days}d-${stamp}.csv`,
+      );
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to download analytics CSV");
+    } finally {
+      setDownloading("");
+    }
+  }
+
+  async function exportAudit() {
+    try {
+      setDownloading("audit");
+      await downloadCsvFromApi(
+        `/admin/exports/moderation-audit.csv?days=${days}`,
+        `moderation-audit-${days}d-${stamp}.csv`,
+      );
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to download audit CSV");
+    } finally {
+      setDownloading("");
+    }
+  }
+
+  async function exportUsers() {
+    try {
+      setDownloading("users");
+      await downloadCsvFromApi(
+        `/admin/exports/users.csv`,
+        `users-${stamp}.csv`,
+      );
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to download users CSV");
+    } finally {
+      setDownloading("");
+    }
+  }
 
   const totals = useMemo(() => {
     const u = data?.usersOverview || {};
@@ -97,11 +151,6 @@ export default function AdminAnalyticsPage() {
       newOutcomes: Number(c.newOutcomes || 0),
     };
   }, [data]);
-
-  function openDownload(url) {
-    // relies on browser to download
-    window.open(url, "_blank");
-  }
 
   return (
     <div className="p-3 space-y-4 text-slate-900 dark:text-slate-100">
@@ -148,29 +197,34 @@ export default function AdminAnalyticsPage() {
         {/* Exports */}
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
           <button
-            onClick={() => openDownload(`/api/admin/exports/analytics.csv?days=${days}`)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            onClick={exportAnalytics}
+            disabled={downloading === "analytics"}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-70"
           >
             <Download className="h-4 w-4" />
-            Download Analytics CSV
+            {downloading === "analytics"
+              ? "Downloading…"
+              : "Download Analytics CSV"}
           </button>
 
           <button
-            onClick={() => openDownload(`/api/admin/exports/moderation-audit.csv?days=${days}`)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50
+            onClick={exportAudit}
+            disabled={downloading === "audit"}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold hover:bg-slate-50 disabled:opacity-70
             dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
           >
             <Download className="h-4 w-4" />
-            Download Audit CSV
+            {downloading === "audit" ? "Downloading…" : "Download Audit CSV"}
           </button>
 
           <button
-            onClick={() => openDownload(`/api/admin/exports/users.csv`)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50
+            onClick={exportUsers}
+            disabled={downloading === "users"}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold hover:bg-slate-50 disabled:opacity-70
             dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
           >
             <Download className="h-4 w-4" />
-            Download Users CSV
+            {downloading === "users" ? "Downloading…" : "Download Users CSV"}
           </button>
         </div>
       </div>
@@ -178,12 +232,18 @@ export default function AdminAnalyticsPage() {
       {/* Stats */}
       {loading ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
-          <p className="text-sm text-slate-500 dark:text-slate-300/70">Loading…</p>
+          <p className="text-sm text-slate-500 dark:text-slate-300/70">
+            Loading…
+          </p>
         </div>
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Total users" value={totals.totalUsers} sub={`New users (${days}d): ${totals.newUsers}`} />
+            <Stat
+              label="Total users"
+              value={totals.totalUsers}
+              sub={`New users (${days}d): ${totals.newUsers}`}
+            />
             <Stat label="Active users" value={totals.activeUsers} />
             <Stat label="Suspended users" value={totals.suspendedUsers} />
             <Stat
@@ -194,9 +254,19 @@ export default function AdminAnalyticsPage() {
           </div>
 
           <div className="grid gap-3 lg:grid-cols-3">
-            <Stat label="Avg resolution time" value={`${totals.avgResolutionHours}h`} sub={`Resolved < 24h: ${totals.resolvedUnder24hPct}%`} />
-            <Stat label={`New practices (${days}d)`} value={totals.newPractices} />
-            <Stat label={`New comments (${days}d)`} value={totals.newComments} />
+            <Stat
+              label="Avg resolution time"
+              value={`${totals.avgResolutionHours}h`}
+              sub={`Resolved < 24h: ${totals.resolvedUnder24hPct}%`}
+            />
+            <Stat
+              label={`New practices (${days}d)`}
+              value={totals.newPractices}
+            />
+            <Stat
+              label={`New comments (${days}d)`}
+              value={totals.newComments}
+            />
           </div>
 
           <div className="grid gap-3 lg:grid-cols-3">
