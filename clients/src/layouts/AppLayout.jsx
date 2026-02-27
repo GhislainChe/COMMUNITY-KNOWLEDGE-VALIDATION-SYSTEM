@@ -11,7 +11,8 @@ import {
   Moon,
   Bookmark,
   ShieldAlert,
-  ShieldCheck, // ✅ NEW
+  ShieldCheck,
+  LayoutDashboard // ✅ NEW
 } from "lucide-react";
 import { logout } from "../utils/auth";
 import { getTheme, toggleTheme, applyTheme } from "../utils/theme";
@@ -172,7 +173,7 @@ export default function AppLayout() {
                 `${linkBase} ${isActive ? linkActive : linkInactive}`
               }
             >
-              <ShieldCheck className="h-5 w-5" /> Admin
+              <LayoutDashboard className="h-5 w-5" /> Admin
             </NavLink>
           </>
         )}
