@@ -12,7 +12,8 @@ import {
   Bookmark,
   ShieldAlert,
   ShieldCheck,
-  LayoutDashboard // ✅ NEW
+  LayoutDashboard,
+  BarChart3
 } from "lucide-react";
 import { logout } from "../utils/auth";
 import { getTheme, toggleTheme, applyTheme } from "../utils/theme";
@@ -174,6 +175,15 @@ export default function AppLayout() {
               }
             >
               <LayoutDashboard className="h-5 w-5" /> Admin
+            </NavLink>
+            <NavLink
+              to="admin-analytics"
+              onClick={onClick}
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              <BarChart3 className="h-5 w-5" /> Admin Analytics
             </NavLink>
           </>
         )}

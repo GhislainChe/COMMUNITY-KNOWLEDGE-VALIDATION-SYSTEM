@@ -17,6 +17,7 @@ import ProfilePage from "./pages/app/ProfilePage";
 import ModerationPage from "./pages/app/ModerationPage";
 import ModerationAuditPage from "./pages/app/ModerationAuditPage";
 import AdminPage from "./pages/app/AdminPage";
+import AdminAnalyticsPage from "./pages/app/AdminAnalyticsPage";
 
 export default function App() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="moderation" element={<ModerationPage />} />
         <Route path="moderation/audit" element={<ModerationAuditPage />} />
         <Route path="admin" element={<AdminPage />} />
+        <Route path="admin-analytics" element={<AdminAnalyticsPage />} />
       </Route>
 
       {/* Fallback */}
