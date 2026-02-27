@@ -49,6 +49,11 @@ export default function AppLayout() {
     return role === "MODERATOR" || role === "ADMIN";
   }, [user]);
 
+  const isAdmin = useMemo(() => {
+    const role = (user?.userRole || user?.role || "").toUpperCase();
+    return role === "ADMIN";
+  }, [user]);
+
   const currentTab = useMemo(() => {
     const path = location.pathname;
     if (path.includes("/app/practices")) return "Practices";
@@ -155,6 +160,19 @@ export default function AppLayout() {
               }
             >
               <ShieldCheck className="h-5 w-5" /> Audit
+            </NavLink>
+          </>
+        )}
+        {isAdmin && (
+          <>
+            <NavLink
+              to="admin"
+              onClick={onClick}
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              <ShieldCheck className="h-5 w-5" /> Admin
             </NavLink>
           </>
         )}
