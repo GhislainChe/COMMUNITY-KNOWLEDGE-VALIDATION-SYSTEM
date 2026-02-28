@@ -4,11 +4,13 @@ import { setToken } from "../auth/token";
 import { Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, UserCircle2, User } from "lucide-react";
 import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { isAuthenticated } from "../utils/auth";
 
 
 export default function RegisterPage() {
-  if (isAuthenticated()) return <Navigate to="/app" replace />;
+  const navigate = useNavigate();
+  const authenticated = isAuthenticated();
   const [fullName, setFullName] = useState("");
   const [gender, setGender] = useState(""); // "MALE" | "FEMALE" | "OTHER"
   const [email, setEmail] = useState("");
@@ -20,6 +22,8 @@ export default function RegisterPage() {
 
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (authenticated) return <Navigate to="/app" replace />;
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -46,9 +50,8 @@ export default function RegisterPage() {
       const res = await api.post("/auth/register", { fullName, gender, email, password });
 
       setToken(res.data.token);
-      setMsg("Account created successfully");
-      localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      navigate("/app", { replace: true });
     } catch (err) {
       setMsg(err.response?.data?.message || "Registration failed");
     } finally {

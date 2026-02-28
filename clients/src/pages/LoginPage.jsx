@@ -4,17 +4,20 @@ import { setToken } from "../auth/token";
 import { Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, UserCircle2 } from "lucide-react";
 import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { isAuthenticated } from "../utils/auth";
 
 
 export default function LoginPage() {
-  if (isAuthenticated()) return <Navigate to="/app" replace />;
+  const navigate = useNavigate();
+  const authenticated = isAuthenticated();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
-  const [remember, setRemember] = useState(true);
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (authenticated) return <Navigate to="/app" replace />;
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -24,9 +27,8 @@ export default function LoginPage() {
     try {
       const res = await api.post("/auth/login", { email, password });
       setToken(res.data.token);
-      setMsg("Login successful");
-      localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      navigate("/app", { replace: true });
     } catch (err) {
       setMsg(err.response?.data?.message || "Login failed");
     } finally {

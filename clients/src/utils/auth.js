@@ -1,5 +1,7 @@
+import { getToken as getAuthToken, clearToken } from "../auth/token";
+
 export const getToken = () => {
-  return localStorage.getItem("token");
+  return getAuthToken();
 };
 
 export const isAuthenticated = () => {
@@ -7,5 +9,5 @@ export const isAuthenticated = () => {
 };
 
 export const logout = () => {
-  localStorage.removeItem("token");
+  clearToken();
 };
