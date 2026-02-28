@@ -87,16 +87,47 @@ export default function AdminAnalyticsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days]);
 
+  async function downloadCsvFromApi(url, filename) {
+    const res = await api.get(url, { responseType: "blob" });
+
+    const contentType = String(res?.headers?.["content-type"] || "");
+    if (contentType.includes("application/json")) {
+      let message = "Failed to download CSV";
+      try {
+        const text = await res.data.text();
+        const parsed = JSON.parse(text);
+        message = parsed?.message || message;
+      } catch {
+        // Keep fallback message when payload is not valid JSON.
+      }
+      throw new Error(message);
+    }
+
+    const blob = new Blob([res.data], { type: "text/csv;charset=utf-8;" });
+    const href = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(href);
+  }
   // ✅ EXPORTS
   async function exportAnalytics() {
     try {
       setDownloading("analytics");
+      setErr("");
       await downloadCsvFromApi(
         `/admin/exports/analytics.csv?days=${days}`,
         `admin-analytics-${days}d-${stamp}.csv`,
       );
     } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to download analytics CSV");
+      setErr(
+        e?.response?.data?.message ||
+          e?.message ||
+          "Failed to download analytics CSV",
+      );
     } finally {
       setDownloading("");
     }
@@ -105,12 +136,17 @@ export default function AdminAnalyticsPage() {
   async function exportAudit() {
     try {
       setDownloading("audit");
+      setErr("");
       await downloadCsvFromApi(
         `/admin/exports/moderation-audit.csv?days=${days}`,
         `moderation-audit-${days}d-${stamp}.csv`,
       );
     } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to download audit CSV");
+      setErr(
+        e?.response?.data?.message ||
+          e?.message ||
+          "Failed to download audit CSV",
+      );
     } finally {
       setDownloading("");
     }
@@ -119,12 +155,17 @@ export default function AdminAnalyticsPage() {
   async function exportUsers() {
     try {
       setDownloading("users");
+      setErr("");
       await downloadCsvFromApi(
         `/admin/exports/users.csv`,
         `users-${stamp}.csv`,
       );
     } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to download users CSV");
+      setErr(
+        e?.response?.data?.message ||
+          e?.message ||
+          "Failed to download users CSV",
+      );
     } finally {
       setDownloading("");
     }
@@ -315,3 +356,4 @@ export default function AdminAnalyticsPage() {
     </div>
   );
 }
+
