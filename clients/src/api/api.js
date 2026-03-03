@@ -2,7 +2,8 @@ import axios from "axios";
 import { getToken } from "../auth/token";
 
 export const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://ckvs-backend.onrender.com/api",
+  withCredentials: true,
 });
 
 // Add token automatically to every request
