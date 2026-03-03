@@ -155,7 +155,7 @@ router.get("/discover/practices", async (req, res) => {
       FROM practices p
       JOIN users u ON u.userId = p.userId
       LEFT JOIN cropTypes ct ON ct.cropTypeId = p.cropTypeId
-      LEFT JOIN problemTypes pt ON pt.problemTypeId = p.problemTypeId
+      LEFT JOIN problemtypes pt ON pt.problemTypeId = p.problemTypeId
       WHERE ${where.join(" AND ")}
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?

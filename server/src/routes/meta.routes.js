@@ -25,7 +25,7 @@ router.get("/crops", async (req, res) => {
 router.get("/problems", async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT problemTypeId, name FROM problemTypes ORDER BY name ASC"
+      "SELECT problemTypeId, name FROM problemtypes ORDER BY name ASC"
     );
     return res.json({ problems: rows });
   } catch (err) {
