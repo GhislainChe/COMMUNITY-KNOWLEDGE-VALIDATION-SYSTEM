@@ -19,7 +19,12 @@ const notificationRoutes = require("./routes/notification.routes");
 const adminAnalyticsRoutes = require("./routes/admin.analytics.routes");
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"], // your dev frontend
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 app.get("/api/health", async (req, res) => {
