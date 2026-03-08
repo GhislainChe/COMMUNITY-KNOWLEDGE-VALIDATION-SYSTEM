@@ -72,7 +72,7 @@ router.get(
       const commentsDate =
         (await pickDateColumn("comments", ["createdAt", "created_on"])) || null;
 
-      // outcomeReports often uses createdAt OR reportedAt depending on your schema
+      // outcomereports often uses createdAt OR reportedAt depending on your schema
       const outcomesDate =
         (await pickDateColumn("outcomereports", ["createdAt", "reportedAt"])) ||
         null;
@@ -114,7 +114,7 @@ router.get(
 
       const newPractices = await countNew("practices", practicesDate);
       const newComments = await countNew("comments", commentsDate);
-      const newOutcomes = await countNew("outcomeReports", outcomesDate);
+      const newOutcomes = await countNew("outcomereports", outcomesDate);
 
       // Flags totals (safe)
       const flagsWhere = flagsCreated
@@ -314,7 +314,7 @@ router.get(
       const commentsDate =
         (await pickDateColumn("comments", ["createdAt", "created_on"])) || null;
       const outcomesDate =
-        (await pickDateColumn("outcomeReports", ["createdAt", "reportedAt"])) ||
+        (await pickDateColumn("outcomereports", ["createdAt", "reportedAt"])) ||
         null;
 
       async function countNew(table, dateCol) {
@@ -353,7 +353,7 @@ router.get(
         newUsers: Number(newUsers || 0),
         newPractices: await countNew("practices", practicesDate),
         newComments: await countNew("comments", commentsDate),
-        newOutcomes: await countNew("outcomeReports", outcomesDate),
+        newOutcomes: await countNew("outcomereports", outcomesDate),
       };
 
       const headers = Object.keys(row);

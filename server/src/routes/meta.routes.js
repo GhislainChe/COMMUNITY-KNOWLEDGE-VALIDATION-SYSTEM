@@ -10,7 +10,7 @@ const router = express.Router();
 router.get("/crops", async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT cropTypeId, name FROM cropTypes ORDER BY name ASC"
+      "SELECT cropTypeId, name FROM croptypes ORDER BY name ASC"
     );
     return res.json({ crops: rows });
   } catch (err) {
