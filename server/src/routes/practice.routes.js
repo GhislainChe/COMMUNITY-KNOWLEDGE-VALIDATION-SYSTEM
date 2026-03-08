@@ -354,6 +354,7 @@ router.get("/:practiceId", async (req, res) => {
       },
     });
   } catch (err) {
+    console.error("practice details error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
