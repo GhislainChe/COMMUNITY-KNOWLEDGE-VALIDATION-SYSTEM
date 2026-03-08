@@ -108,18 +108,18 @@ router.get("/discover/practices", async (req, res) => {
 
         -- outcome reports totals
         (SELECT COUNT(*)
-         FROM outcomeReports o
+         FROM outcomereports o
          WHERE o.practiceId = p.practiceId) AS totalReports,
 
         -- valid reports
         (SELECT COUNT(*)
-         FROM outcomeReports o
+         FROM outcomereports o
          WHERE o.practiceId = p.practiceId
            AND o.status = 'VALID') AS validReports,
 
         -- yesCount among VALID reports
         (SELECT COUNT(*)
-         FROM outcomeReports o
+         FROM outcomereports o
          WHERE o.practiceId = p.practiceId
            AND o.status = 'VALID'
            AND o.recommendation = 'YES') AS yesCount,
@@ -129,7 +129,7 @@ router.get("/discover/practices", async (req, res) => {
           CASE
             WHEN (
               SELECT COUNT(*)
-              FROM outcomeReports o
+              FROM outcomereports o
               WHERE o.practiceId = p.practiceId
                 AND o.status='VALID'
                 AND o.recommendation IS NOT NULL
@@ -137,13 +137,13 @@ router.get("/discover/practices", async (req, res) => {
             ELSE ROUND(
               (
                 (SELECT COUNT(*)
-                 FROM outcomeReports o
+                 FROM outcomereports o
                  WHERE o.practiceId = p.practiceId
                    AND o.status='VALID'
                    AND o.recommendation='YES')
                 /
                 (SELECT COUNT(*)
-                 FROM outcomeReports o
+                 FROM outcomereports o
                  WHERE o.practiceId = p.practiceId
                    AND o.status='VALID'
                    AND o.recommendation IS NOT NULL)
@@ -257,16 +257,16 @@ router.get("/discover/for-you", requireAuth, async (req, res) => {
         (SELECT COUNT(*) FROM applied_practices ap
           WHERE ap.practiceId = p.practiceId AND ap.appliedAt >= (NOW() - INTERVAL 7 DAY)) AS appliedLast7,
 
-        (SELECT COUNT(*) FROM outcomeReports o WHERE o.practiceId = p.practiceId) AS totalReports,
-        (SELECT COUNT(*) FROM outcomeReports o WHERE o.practiceId = p.practiceId AND o.status='VALID') AS validReports,
-        (SELECT COUNT(*) FROM outcomeReports o
+        (SELECT COUNT(*) FROM outcomereports o WHERE o.practiceId = p.practiceId) AS totalReports,
+        (SELECT COUNT(*) FROM outcomereports o WHERE o.practiceId = p.practiceId AND o.status='VALID') AS validReports,
+        (SELECT COUNT(*) FROM outcomereports o
           WHERE o.practiceId = p.practiceId AND o.status='VALID' AND o.recommendation='YES') AS yesCount,
 
         (
           CASE
             WHEN (
               SELECT COUNT(*)
-              FROM outcomeReports o
+              FROM outcomereports o
               WHERE o.practiceId = p.practiceId
                 AND o.status='VALID'
                 AND o.recommendation IS NOT NULL
@@ -274,13 +274,13 @@ router.get("/discover/for-you", requireAuth, async (req, res) => {
             ELSE ROUND(
               (
                 (SELECT COUNT(*)
-                 FROM outcomeReports o
+                 FROM outcomereports o
                  WHERE o.practiceId = p.practiceId
                    AND o.status='VALID'
                    AND o.recommendation='YES')
                 /
                 (SELECT COUNT(*)
-                 FROM outcomeReports o
+                 FROM outcomereports o
                  WHERE o.practiceId = p.practiceId
                    AND o.status='VALID'
                    AND o.recommendation IS NOT NULL)

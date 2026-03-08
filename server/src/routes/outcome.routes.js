@@ -109,7 +109,7 @@ router.post(
       // 3) Insert report
       // IMPORTANT: UNIQUE(userId, practiceId) in DB will block duplicates
       await pool.query(
-        `INSERT INTO outcomeReports
+        `INSERT INTO outcomereports
        (userId, practiceId, outcomeType, outcomeScore, similarContext, observation, timeToResult, recommendation)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
@@ -133,7 +133,7 @@ router.post(
       // 4) Recalculate practice score using ALL outcome reports
       // Why? Each new report changes the average effectiveness.
       const [rows] = await pool.query(
-        "SELECT AVG(outcomeScore) AS avgScore, COUNT(*) AS countReports FROM outcomeReports WHERE practiceId = ? AND status='VALID'",
+        "SELECT AVG(outcomeScore) AS avgScore, COUNT(*) AS countReports FROM outcomereports WHERE practiceId = ? AND status='VALID'",
         [practiceId],
       );
 

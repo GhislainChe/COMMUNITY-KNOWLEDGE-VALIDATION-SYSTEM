@@ -74,7 +74,7 @@ router.get(
 
       // outcomeReports often uses createdAt OR reportedAt depending on your schema
       const outcomesDate =
-        (await pickDateColumn("outcomeReports", ["createdAt", "reportedAt"])) ||
+        (await pickDateColumn("outcomereports", ["createdAt", "reportedAt"])) ||
         null;
 
       const flagsCreated =

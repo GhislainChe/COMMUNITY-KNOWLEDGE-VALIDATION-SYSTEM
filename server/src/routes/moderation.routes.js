@@ -476,7 +476,7 @@ router.patch(
         }
 
         const [r] = await conn.query(
-          "UPDATE outcomeReports SET status='REJECTED' WHERE reportId=?",
+          "UPDATE outcomereports SET status='REJECTED' WHERE reportId=?",
           [flag.targetId],
         );
 
@@ -582,7 +582,7 @@ router.get(
       if (flag.targetType === "OUTCOME") {
         const [oRows] = await pool.query(
           `SELECT reportId, comment, status, practiceId
-           FROM outcomeReports
+           FROM outcomereports
            WHERE reportId=?`,
           [flag.targetId],
         );
@@ -677,13 +677,13 @@ router.post(
       if (flag.actionTaken === "REJECT_OUTCOME") {
         // outcome back to VALID
         await conn.query(
-          "UPDATE outcomeReports SET status='VALID' WHERE reportId=?",
+          "UPDATE outcomereports SET status='VALID' WHERE reportId=?",
           [flag.targetId],
         );
 
         // recalc score
         const [prRows] = await conn.query(
-          "SELECT practiceId FROM outcomeReports WHERE reportId=?",
+          "SELECT practiceId FROM outcomereports WHERE reportId=?",
           [flag.targetId],
         );
 
@@ -692,7 +692,7 @@ router.post(
 
           const [avgRows] = await conn.query(
             `SELECT AVG(outcomeScore) AS avgScore, COUNT(*) AS countReports
-             FROM outcomeReports
+             FROM outcomereports
              WHERE practiceId=? AND status='VALID'`,
             [practiceId],
           );
