@@ -252,14 +252,61 @@ router.get("/:practiceId", async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      `SELECT 
-         p.practiceId, p.userId, p.title, p.description, p.steps,
-         p.overview, p.materials, p.season, p.location, p.imageUrl,
-         p.status, p.effectivenessScore, p.confidenceLevel, p.createdAt,
-         u.fullName AS authorName, u.credibilityScore AS authorCredibility, u.userRole AS authorRole
-       FROM practices p
-       JOIN users u ON u.userId = p.userId
-       WHERE p.practiceId = ?`,
+      `
+      SELECT
+        p.practiceId,
+        p.userId,
+        p.title,
+        p.description,
+        p.steps,
+        p.overview,
+        p.materials,
+        p.season,
+        p.location,
+        p.imageUrl,
+        p.status,
+        p.effectivenessScore,
+        p.confidenceLevel,
+        p.createdAt,
+
+        u.fullName AS authorName,
+        u.credibilityScore AS authorCredibility,
+        u.userRole AS authorRole,
+
+        ct.name AS cropType,
+        pt.name AS problemType,
+
+        COALESCE(os.totalReports, 0) AS totalReports,
+        COALESCE(os.validReports, 0) AS validReports,
+        COALESCE(cs.visibleComments, 0) AS visibleComments
+      FROM practices p
+      JOIN users u
+        ON u.userId = p.userId
+      LEFT JOIN cropTypes ct
+        ON ct.cropTypeId = p.cropTypeId
+      LEFT JOIN problemtypes pt
+        ON pt.problemTypeId = p.problemTypeId
+      LEFT JOIN (
+        SELECT
+          practiceId,
+          COUNT(*) AS totalReports,
+          SUM(CASE WHEN status = 'VALID' THEN 1 ELSE 0 END) AS validReports
+        FROM outcomeReports
+        GROUP BY practiceId
+      ) os
+        ON os.practiceId = p.practiceId
+      LEFT JOIN (
+        SELECT
+          practiceId,
+          COUNT(*) AS visibleComments
+        FROM comments
+        WHERE status = 'VISIBLE'
+        GROUP BY practiceId
+      ) cs
+        ON cs.practiceId = p.practiceId
+      WHERE p.practiceId = ?
+      LIMIT 1
+      `,
       [practiceId]
     );
 
@@ -273,27 +320,6 @@ router.get("/:practiceId", async (req, res) => {
       return res.status(403).json({ message: "Practice is not available" });
     }
 
-    const [outcomeStats] = await pool.query(
-      `SELECT
-         COUNT(*) AS totalReports,
-         SUM(CASE WHEN status='VALID' THEN 1 ELSE 0 END) AS validReports
-       FROM outcomeReports
-       WHERE practiceId = ?`,
-      [practiceId]
-    );
-
-    const totalReports = Number(outcomeStats[0].totalReports || 0);
-    const validReports = Number(outcomeStats[0].validReports || 0);
-
-    const [commentStats] = await pool.query(
-      `SELECT COUNT(*) AS visibleComments
-       FROM comments
-       WHERE practiceId = ? AND status='VISIBLE'`,
-      [practiceId]
-    );
-
-    const visibleComments = Number(commentStats[0].visibleComments || 0);
-
     return res.json({
       practice: {
         practiceId: practice.practiceId,
@@ -305,6 +331,8 @@ router.get("/:practiceId", async (req, res) => {
         season: practice.season,
         location: practice.location,
         imageUrl: practice.imageUrl,
+        cropType: practice.cropType,
+        problemType: practice.problemType,
         effectivenessScore: Number(practice.effectivenessScore),
         confidenceLevel: practice.confidenceLevel,
         createdAt: practice.createdAt,
@@ -315,8 +343,13 @@ router.get("/:practiceId", async (req, res) => {
           role: practice.authorRole,
         },
         stats: {
-          outcomes: { totalReports, validReports },
-          comments: { visibleComments },
+          outcomes: {
+            totalReports: Number(practice.totalReports || 0),
+            validReports: Number(practice.validReports || 0),
+          },
+          comments: {
+            visibleComments: Number(practice.visibleComments || 0),
+          },
         },
       },
     });
