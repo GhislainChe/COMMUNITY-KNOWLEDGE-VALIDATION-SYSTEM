@@ -2,10 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import defaultPracticeImg from "../../assets/practice-default.jpg";
+import { buildImageUrl } from "../../utils/media";
 import { SlidersHorizontal, X } from "lucide-react";
 import ProfileSkeleton from "../../components/UIskeletons/ProfileSkeleton";
-
-const API_BASE = "http://localhost:5000";
 const PAGE_SIZE = 10;
 
 export default function DiscoverPage() {
@@ -199,11 +198,7 @@ export default function DiscoverPage() {
   }
 
   function ResultRow({ p }) {
-    const imgSrc = p.imageUrl
-      ? p.imageUrl.startsWith("http")
-        ? p.imageUrl
-        : `${API_BASE}${p.imageUrl}`
-      : defaultPracticeImg;
+    const imgSrc = buildImageUrl(p.imageUrl) || defaultPracticeImg;
 
     return (
       <button

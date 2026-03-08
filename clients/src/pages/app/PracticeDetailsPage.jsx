@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api/api";
 import defaultPracticeImg from "../../assets/practice-default.jpg";
+import { buildImageUrl } from "../../utils/media";
 import { Flag } from "lucide-react";
 import ReportModal from "../../components/ReportModal";
 
@@ -103,11 +104,7 @@ export default function PracticeDetailsPage() {
   if (error) return <p className="text-red-600">{error}</p>;
   if (!practice) return <p className="text-slate-500">Practice not found.</p>;
 
-  const imgSrc = practice.imageUrl
-    ? practice.imageUrl.startsWith("http")
-      ? practice.imageUrl
-      : `http://localhost:5000${practice.imageUrl}`
-    : defaultPracticeImg;
+  const imgSrc = buildImageUrl(practice.imageUrl) || defaultPracticeImg;
 
   return (
     <div className="mx-auto w-full max-w-1xl p-0 sm:p-4 md:p-6">

@@ -3,11 +3,10 @@ import { useEffect, useState } from "react";
 import { api } from "../../api/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PracticesGridSkeleton from "../../components/UIskeletons/PracticesGridSkeleton";
+import { buildImageUrl } from "../../utils/media";
 
 // ✅ Put a default image in: clients/src/assets/practice-default.jpg
 import defaultPracticeImg from "../../assets/practice-default.jpg";
-
-const API_BASE = "http://localhost:5000";
 
 export default function PracticesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -279,11 +278,7 @@ export default function PracticesPage() {
         <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {practices.map((p) => {
             // ✅ If backend stores /uploads/... then prefix with API_BASE
-            const imgSrc = p.imageUrl
-              ? p.imageUrl.startsWith("http")
-                ? p.imageUrl
-                : `${API_BASE}${p.imageUrl}`
-              : defaultPracticeImg;
+            const imgSrc = buildImageUrl(p.imageUrl) || defaultPracticeImg;
 
             return (
               <div

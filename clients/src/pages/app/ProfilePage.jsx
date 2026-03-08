@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import defaultPracticeImg from "../../assets/practice-default.jpg";
+import { buildImageUrl } from "../../utils/media";
 import {
   Bookmark,
   MessageCircle,
@@ -17,8 +18,6 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import ProfileSkeleton from "../../components/UIskeletons/ProfileSkeleton"
-
-const API_BASE = "http://localhost:5000";
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -338,11 +337,7 @@ export default function ProfilePage() {
         ) : (
           <div className="mt-4 divide-y divide-slate-200 dark:divide-white/10">
             {created.map((p) => {
-              const imgSrc = p.imageUrl
-                ? p.imageUrl.startsWith("http")
-                  ? p.imageUrl
-                  : `${API_BASE}${p.imageUrl}`
-                : defaultPracticeImg;
+              const imgSrc = buildImageUrl(p.imageUrl) || defaultPracticeImg;
 
               const createdAt = p.createdAt
                 ? new Date(p.createdAt).toLocaleString()
