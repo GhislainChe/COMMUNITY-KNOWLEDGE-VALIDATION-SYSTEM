@@ -210,7 +210,7 @@ router.get("/:id/stats", requireAuth, async (req, res) => {
         SUM(CASE WHEN recommendation = 'MAYBE' THEN 1 ELSE 0 END) AS maybeCount,
 
         SUM(CASE WHEN recommendation IS NOT NULL THEN 1 ELSE 0 END) AS totalRecommendationAnswered
-      FROM outcomeReports
+      FROM outcomereports
       WHERE practiceId = ? AND status = 'VALID'
       `,
       [practiceId]
