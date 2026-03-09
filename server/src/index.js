@@ -21,9 +21,12 @@ const adminAnalyticsRoutes = require("./routes/admin.analytics.routes");
 const app = express();
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // your dev frontend
+    origin: [
+      "http://localhost:5173",
+      "https://community-knowledge-validation-syst.vercel.app/"
+    ], // your dev frontend
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 
@@ -61,7 +64,6 @@ app.use("/api", adminAnalyticsRoutes);
 app.use("/api/meta", metaRoutes);
 app.use("/api", discoverRoutes);
 app.use("/api", notificationRoutes);
-
 
 console.log("DB_PASSWORD loaded?", process.env.DB_PASSWORD ? "YES" : "NO");
 const PORT = process.env.PORT || 5000;
