@@ -21,10 +21,11 @@ const adminAnalyticsRoutes = require("./routes/admin.analytics.routes");
 const app = express();
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://community-knowledge-validation-syst.vercel.app/"
-    ], // your dev frontend
+    origin: true,
+    // [
+    //   "http://localhost:5173",
+    //   "https://community-knowledge-validation-syst.vercel.app/"
+    // ], //your dev frontend
     credentials: true,
   }),
 );
