@@ -22,13 +22,12 @@ const app = express();
 app.use(
   cors({
     origin: true,
-    // [
-    //   "http://localhost:5173",
-    //   "https://community-knowledge-validation-syst.vercel.app/"
-    // ], //your dev frontend
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+app.options("*", cors()); // Enable pre-flight for all routes
 app.use(express.json());
 
 app.get("/api/health", async (req, res) => {
