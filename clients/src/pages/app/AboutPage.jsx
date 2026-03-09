@@ -7,12 +7,12 @@ export default function AboutPage() {
       {
         icon: <Users className="h-5 w-5" />,
         title: "Community-Driven Knowledge",
-        desc: "Farmers share real practices and learn from each other using structured feedback and discussions.",
+        desc: "Community members share practical agricultural knowledge and refine it through feedback, discussion, and lived experience.",
       },
       {
         icon: <BarChart3 className="h-5 w-5" />,
         title: "Validation & Statistics",
-        desc: "Outcome reports are aggregated into counts (effective/partial/ineffective) plus recommendation rate.",
+        desc: "Outcome reports are aggregated into validation metrics such as effectiveness counts, confidence, and recommendation rate.",
       },
       {
         icon: <ShieldCheck className="h-5 w-5" />,
@@ -22,7 +22,7 @@ export default function AboutPage() {
       {
         icon: <Sparkles className="h-5 w-5" />,
         title: "Discover What Works",
-        desc: "Discover trending and highly recommended practices based on real usage and results, not assumptions.",
+        desc: "Users can discover promising practices based on real usage, community validation, and measurable outcomes.",
       },
     ],
     []
@@ -30,23 +30,23 @@ export default function AboutPage() {
 
   const objectives = useMemo(
     () => [
-      "Enable farmers to submit agricultural practices with clear steps and materials.",
-      "Allow users to apply practices and submit real outcomes after implementation.",
-      "Compute effectiveness indicators (effective / partial / ineffective) and recommendation rate.",
-      "Provide discussion threads per practice for peer review and clarifications.",
-      "Support bookmarks to track applied practices and submit outcomes later.",
-      "Improve decision-making by encouraging evidence-based farming actions.",
+      "Enable users to submit community agricultural practices with clear steps and context.",
+      "Allow farmers and other users to apply practices and report real outcomes after implementation.",
+      "Compute validation indicators such as effectiveness, recommendation rate, and confidence level.",
+      "Provide discussion threads for peer review, clarification, and collaborative learning.",
+      "Support bookmarks and follow-up reporting so validation continues over time.",
+      "Promote evidence-based agricultural decision-making using community-generated data.",
     ],
     []
   );
 
   const validationSteps = useMemo(
     () => [
-      "A farmer/community member submits a practice (title, description, steps, optional context).",
-      "Other users apply the practice and later submit an outcome report (effective/partial/ineffective).",
-      "Users also indicate recommendation (Yes/No/Maybe) and provide a short comment + duration.",
-      "The system aggregates reports and generates statistics and insight (e.g., recommended rate).",
-      "As valid reports increase, the practice becomes more trustworthy and confidence improves.",
+      "A user submits a practice with a title, description, steps, and optional farming context.",
+      "Other users apply the practice in real conditions and later submit an outcome report.",
+      "Each report includes effectiveness, recommendation, duration, and short evidence-based feedback.",
+      "The platform aggregates those reports into validation statistics and confidence indicators.",
+      "As more valid outcomes are collected, trust in the practice and its contributor becomes stronger.",
     ],
     []
   );
@@ -57,7 +57,7 @@ export default function AboutPage() {
       { k: "Backend", v: "Node.js + Express" },
       { k: "Database", v: "MySQL" },
       { k: "Auth", v: "JWT (token-based authentication)" },
-      { k: "Uploads", v: "Multer + /uploads static hosting" },
+      { k: "Uploads", v: "Multer + Cloudinary" },
       { k: "API Style", v: "REST endpoints" },
     ],
     []
@@ -65,11 +65,11 @@ export default function AboutPage() {
 
   const future = useMemo(
     () => [
-      "Personalized recommendations (based on crops applied, location, and outcomes).",
-      "Location-aware suggestions (nearby validated practices).",
-      "AI-assisted summaries: “Why this works” + best conditions.",
-      "Offline-first mobile app for rural areas.",
-      "Stronger moderation workflows and community verification roles.",
+      "Smarter recommendations based on user activity, crop type, and validation history.",
+      "Location-aware suggestions for similar farming environments.",
+      "Richer validation summaries such as why a practice works and under which conditions.",
+      "Offline-first mobile support for low-connectivity rural communities.",
+      "Stronger moderation, audit history, and community verification workflows.",
     ],
     []
   );
@@ -84,21 +84,23 @@ export default function AboutPage() {
               About the System
             </p>
             <h1 className="mt-1 font-heading text-2xl font-extrabold text-slate-900 dark:text-white sm:text-3xl">
-              Agricultural Practice Validation & Awareness Platform
+              Community Knowledge Validation System
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300/80">
-              This system is designed to help farmers and community members share agricultural practices,
-              apply them in real life, and validate whether they are effective using structured outcome
-              reporting and statistics. The goal is to reduce trial-and-error farming by promoting
-              evidence-based decision making.
+              The Community Knowledge Validation System (CKVS) is designed to capture agricultural
+              practices from the community, validate them through real outcome reporting, and help
+              users make better farming decisions using structured evidence instead of assumptions.
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 sm:w-[320px]">
-            <p className="font-semibold">Core Value</p>
-            <p className="mt-1 text-slate-600 dark:text-slate-300/80">
-              Turning community knowledge into <b>validated knowledge</b> using data, outcomes, and trust.
-            </p>
+            <p className="font-semibold">Project Details</p>
+            <div className="mt-2 space-y-1 text-slate-600 dark:text-slate-300/80">
+              <p>Community Knowledge Validation System</p>
+              <p>Version 1.0</p>
+              <p>Developed by Ndong Ghislain Che</p>
+              <p>HND Software Engineering Project</p>
+            </div>
           </div>
         </div>
       </div>
@@ -109,10 +111,10 @@ export default function AboutPage() {
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
           <h2 className="font-heading text-lg font-bold">Problem Statement</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300/80">
-            Many farmers apply agricultural practices based on rumors, incomplete advice, or unverified
-            information. As a result, they risk crop failure, financial losses, and time waste. There is
-            often no structured system that tracks real outcomes, measures effectiveness, and builds trust
-            from community validation.
+            Many farmers rely on word-of-mouth advice, incomplete recommendations, or practices that
+            have never been properly validated. This creates uncertainty, wasted effort, and avoidable
+            losses. CKVS addresses that gap by turning shared practices into structured, reviewable,
+            and measurable knowledge.
           </p>
         </div>
 
@@ -172,8 +174,8 @@ export default function AboutPage() {
         <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
           <p className="font-semibold">Why this matters</p>
           <p className="mt-1 text-slate-600 dark:text-slate-300/80">
-            Instead of relying on assumptions, farmers can make choices based on real results reported by
-            other users in similar conditions.
+            Instead of depending only on assumptions, users can make agricultural decisions using
+            real community feedback, measurable outcomes, and stronger trust signals.
           </p>
         </div>
       </div>
@@ -212,8 +214,9 @@ export default function AboutPage() {
       <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
         <p className="font-semibold text-slate-900 dark:text-white">Project Note</p>
         <p className="mt-1">
-          This platform supports your HND goal by demonstrating a full software development lifecycle:
-          requirements, design, implementation, testing, and evaluation — with strong real-world relevance.
+          This project demonstrates the practical application of software engineering to a real
+          community problem by combining requirements analysis, system design, implementation,
+          validation logic, moderation, analytics, and user-centered delivery.
         </p>
       </div>
     </div>
