@@ -1,7 +1,10 @@
 const express = require("express");
 const pool = require("../db/pool");
 const { requireAuth } = require("../middleware/auth");
-const { uploadPracticeImage } = require("../middleware/uploadPracticeImage");
+const {
+  uploadPracticeImage,
+  processPracticeImageUpload,
+} = require("../middleware/uploadPracticeImage");
 
 const router = express.Router();
 
@@ -10,57 +13,63 @@ const router = express.Router();
  * Creates a new practice.
  * Protected: user must be logged in.
  */
-router.post("/", requireAuth, uploadPracticeImage.single("image"), async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      steps,
-      overview,
-      materials,
-      season,
-      location,
-      cropTypeId,
-      problemTypeId,
-    } = req.body;
-
-    if (!title || !description || !steps) {
-      return res
-        .status(400)
-        .json({ message: "title, description, and steps are required" });
-    }
-
-    const userId = req.user.userId;
-    const imageUrl = req.file ? req.file.path : null;
-
-    const [result] = await pool.query(
-      `INSERT INTO practices 
-       (userId, title, description, steps, overview, materials, season, location, imageUrl, cropTypeId, problemTypeId)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        userId,
+router.post(
+  "/",
+  requireAuth,
+  uploadPracticeImage.single("image"),
+  processPracticeImageUpload,
+  async (req, res) => {
+    try {
+      const {
         title,
         description,
         steps,
-        overview || null,
-        materials || null,
-        season || null,
-        location || null,
-        imageUrl || null,
-        cropTypeId || null,
-        problemTypeId || null,
-      ]
-    );
+        overview,
+        materials,
+        season,
+        location,
+        cropTypeId,
+        problemTypeId,
+      } = req.body;
 
-    return res.status(201).json({
-      message: "Practice created",
-      practiceId: result.insertId,
-      imageUrl,
-    });
-  } catch (err) {
-    return res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
+      if (!title || !description || !steps) {
+        return res
+          .status(400)
+          .json({ message: "title, description, and steps are required" });
+      }
+
+      const userId = req.user.userId;
+      const imageUrl = req.file ? req.file.path : null;
+
+      const [result] = await pool.query(
+        `INSERT INTO practices 
+         (userId, title, description, steps, overview, materials, season, location, imageUrl, cropTypeId, problemTypeId)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          userId,
+          title,
+          description,
+          steps,
+          overview || null,
+          materials || null,
+          season || null,
+          location || null,
+          imageUrl || null,
+          cropTypeId || null,
+          problemTypeId || null,
+        ]
+      );
+
+      return res.status(201).json({
+        message: "Practice created",
+        practiceId: result.insertId,
+        imageUrl,
+      });
+    } catch (err) {
+      return res.status(500).json({ message: "Server error", error: err.message });
+    }
+  },
+);
 
 /**
  * GET /api/practices
