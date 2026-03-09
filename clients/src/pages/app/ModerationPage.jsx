@@ -73,7 +73,7 @@ function actionIcon(action) {
 
 function StatCard({ icon, label, value, hint }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+    <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
       <div className="flex items-start justify-between gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-900 text-white dark:bg-white/10">
           {icon}
@@ -98,7 +98,7 @@ function MiniBars({ title, rows, valueKey = "count", labelKey = "label" }) {
   const max = Math.max(1, ...(rows || []).map((r) => Number(r[valueKey] || 0)));
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+    <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
           {title}
@@ -142,7 +142,7 @@ function MiniBars({ title, rows, valueKey = "count", labelKey = "label" }) {
 
 function SkeletonRow() {
   return (
-    <div className="p-4 space-y-3">
+    <div className="space-y-2 p-3 sm:space-y-3 sm:p-4">
       <div className="flex items-center gap-2">
         <div className="h-6 w-20 rounded-full bg-slate-200 dark:bg-white/10" />
         <div className="h-6 w-24 rounded-full bg-slate-200 dark:bg-white/10" />
@@ -284,13 +284,13 @@ export default function ModerationPage() {
 
   if (loading) {
     return (
-      <div className="p-3 space-y-4">
-        <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="space-y-3 px-3 py-3 sm:space-y-4 sm:px-4 md:px-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
           <div className="h-6 w-40 rounded bg-slate-200 dark:bg-white/10" />
           <div className="mt-2 h-4 w-72 rounded bg-slate-200 dark:bg-white/10" />
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
           <div className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
             <div className="h-4 w-32 rounded bg-slate-200 dark:bg-white/10" />
           </div>
@@ -319,10 +319,10 @@ export default function ModerationPage() {
     })) || [];
 
   return (
-    <div className="p-3 space-y-4 text-slate-900 dark:text-slate-100">
+    <div className="space-y-3 px-3 py-3 text-slate-900 dark:text-slate-100 sm:space-y-4 sm:px-4 md:px-6">
       {/* Header */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <div className="flex items-start justify-between gap-3">
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-600 text-white">
@@ -341,7 +341,7 @@ export default function ModerationPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             <select
               value={range}
               onChange={(e) => setRange(e.target.value)}
@@ -370,7 +370,7 @@ export default function ModerationPage() {
       </div>
 
       {/* ✅ Stats Panel */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
@@ -416,14 +416,14 @@ export default function ModerationPage() {
           />
         </div>
 
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
           <MiniBars title="Flags by target type" rows={byTypeRows} />
           <MiniBars title="Flags by reason" rows={byReasonRows} />
         </div>
       </div>
 
       {/* List */}
-      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10">
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
             Pending flags
@@ -447,7 +447,7 @@ export default function ModerationPage() {
                 onClick={() => openReviewModal(f)}
                 className="w-full text-left hover:bg-slate-50 dark:hover:bg-white/5"
               >
-                <div className="p-4 space-y-2">
+                <div className="space-y-2 p-3 sm:p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${typePill(f.targetType)}`}>
                       {f.targetType}
@@ -489,8 +489,8 @@ export default function ModerationPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeReviewModal} />
 
-          <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0b1220]">
-            <div className="flex items-start justify-between gap-3 border-b border-slate-200 p-4 dark:border-white/10">
+          <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0b1220] sm:rounded-3xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200 p-3 sm:p-4 dark:border-white/10">
               <div className="min-w-0">
                 <p className="text-xs text-slate-500 dark:text-slate-300/70">
                   Review flag #{openFlag.flagId}
@@ -514,7 +514,7 @@ export default function ModerationPage() {
               </button>
             </div>
 
-            <div className="max-h-[70vh] overflow-y-auto p-4">
+            <div className="max-h-[70vh] overflow-y-auto p-3 sm:p-4">
               <div className="mt-1 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-300/70">
                   Content preview
@@ -565,7 +565,7 @@ export default function ModerationPage() {
                 </div>
               )}
 
-              <form onSubmit={submitReview} className="mt-4 space-y-4">
+              <form onSubmit={submitReview} className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-600 dark:text-slate-300/70">
                     Action

@@ -158,10 +158,10 @@ export default function ProfilePage() {
   if (loading) return <ProfileSkeleton />;
     if (error)
       return (
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex items-end justify-between gap-3">
           <div className="space-y-2 p-3">
             <h1 className="font-heading text-2xl font-semibold">Profile</h1>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
               Error getting your profile<b> Check your internet connection and try again</b>.
             </div>
           </div>
@@ -169,9 +169,9 @@ export default function ProfilePage() {
       );
 
   return (
-    <div className="p-3 space-y-4 text-slate-900 dark:text-slate-100">
+    <div className="space-y-3 px-3 py-3 text-slate-900 dark:text-slate-100 sm:space-y-4 sm:px-4 md:px-6">
       {/* Header card */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -209,10 +209,10 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 sm:justify-end">
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:justify-end">
             <button
               onClick={openEdit}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 sm:w-auto"
               title="Edit profile"
             >
               <Pencil className="h-4 w-4" />
@@ -221,7 +221,7 @@ export default function ProfilePage() {
 
             <button
               onClick={() => navigate("/app/practices")}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 sm:w-auto"
             >
               <Leaf className="h-4 w-4" />
               Practices
@@ -229,7 +229,7 @@ export default function ProfilePage() {
 
             <button
               onClick={() => navigate("/logout")}
-              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 sm:w-auto"
               title="Logout"
             >
               <LogOut className="h-4 w-4" />
@@ -239,7 +239,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Credibility explanation + progress */}
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:mt-4 sm:p-4 dark:border-white/10 dark:bg-white/5">
           <p className="text-sm font-semibold">Credibility Score</p>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/80">
             Your score increases when your practices are used and when outcomes
@@ -310,8 +310,8 @@ export default function ProfilePage() {
       </div>
 
       {/* Created Practices */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-        <div className="flex items-center justify-between">
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-heading text-lg font-bold">
               My Created Practices ({created.length})
@@ -323,7 +323,7 @@ export default function ProfilePage() {
 
           <button
             onClick={loadProfile}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 sm:w-auto"
           >
             Refresh
           </button>
@@ -335,7 +335,7 @@ export default function ProfilePage() {
             to add one.
           </div>
         ) : (
-          <div className="mt-4 divide-y divide-slate-200 dark:divide-white/10">
+          <div className="mt-3 divide-y divide-slate-200 dark:divide-white/10 sm:mt-4">
             {created.map((p) => {
               const imgSrc = buildImageUrl(p.imageUrl) || defaultPracticeImg;
 
@@ -390,8 +390,8 @@ export default function ProfilePage() {
             onClick={closeEdit}
           />
 
-          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-4 dark:border-white/10">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-[#0b1220] sm:rounded-3xl">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200 p-3 sm:p-4 dark:border-white/10">
               <div>
                 <h2 className="font-heading text-lg font-bold">Edit profile</h2>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300/70">
@@ -410,7 +410,7 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            <div className="max-h-[75vh] overflow-y-auto p-4">
+            <div className="max-h-[75vh] overflow-y-auto p-3 sm:p-4">
               {editErr && (
                 <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
                   {editErr}

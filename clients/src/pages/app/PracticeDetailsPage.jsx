@@ -100,21 +100,21 @@ export default function PracticeDetailsPage() {
     }
   }
 
-  if (loading) return <p className="text-slate-500">Loading...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
-  if (!practice) return <p className="text-slate-500">Practice not found.</p>;
+  if (loading) return <p className="px-3 py-3 text-slate-500 sm:px-4 md:px-6">Loading...</p>;
+  if (error) return <p className="px-3 py-3 text-red-600 sm:px-4 md:px-6">{error}</p>;
+  if (!practice) return <p className="px-3 py-3 text-slate-500 sm:px-4 md:px-6">Practice not found.</p>;
 
   const imgSrc = buildImageUrl(practice.imageUrl) || defaultPracticeImg;
 
   return (
-    <div className="mx-auto w-full max-w-1xl p-0 sm:p-4 md:p-6">
+    <div className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-4 md:px-6">
       {/* Page container */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-2 sm:p-4 md:p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 md:p-6 shadow-sm dark:border-white/10 dark:bg-white/5">
         {/* HERO CARD */}
-        <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-white/10">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
           {/* Background image */}
           <div
-            className="min-h-[240px] sm:min-h-[300px] md:min-h-[360px] bg-cover bg-center"
+            className="min-h-[420px] sm:min-h-[300px] md:min-h-[360px] bg-cover bg-center"
             style={{
               backgroundImage: `url(${imgSrc})`,
             }}
@@ -126,24 +126,24 @@ export default function PracticeDetailsPage() {
           {/* Content */}
           <div className="absolute inset-0 flex flex-col justify-end p-3 sm:p-6">
             {/* Author pill */}
-            <div className="mb-2">
+            <div className="mb-1 sm:mb-2">
               <span className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur">
                 by {practice?.author?.fullName || "Community member"}
               </span>
             </div>
 
             {/* Title */}
-            <h1 className="text-left text-xl font-extrabold leading-tight text-white sm:text-2xl md:text-3xl">
+            <h1 className="text-left text-[1.7rem] font-extrabold leading-tight text-white sm:text-2xl md:text-3xl">
               {practice?.title || "Practice title"}
             </h1>
 
             {/* Description */}
-            <p className="mt-1 max-w-xl text-left text-sm text-white/85 sm:text-[15px]">
+            <p className="mt-1 line-clamp-2 max-w-xl text-left text-[13px] text-white/85 sm:text-[15px]">
               {practice?.description ||
                 "Community practice shared with full context and steps."}
             </p>
 
-            <div className="sm:ml-auto text-left mt-3 text-xs text-white/80">
+            <div className="mt-2 text-left text-xs text-white/80 sm:ml-auto sm:mt-3">
               Score:{" "}
               <span className="font-bold text-white">
                 {practice?.effectivenessScore ?? "0.00"}
@@ -155,20 +155,20 @@ export default function PracticeDetailsPage() {
             </div>
 
             {/* Buttons row */}
-            <div className="mt-4 flex flex-row gap-2 sm:flex-row sm:items-center">
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:flex sm:flex-row sm:items-center">
               {/* Apply / Applied */}
               {!isApplied ? (
                 <button
                   onClick={handleApply}
                   disabled={applyLoading}
-                  className="rounded-2xl bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-100 disabled:opacity-60 sm:w-auto"
+                  className="w-full rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-100 disabled:opacity-60 sm:w-auto"
                 >
                   {applyLoading ? "Applying..." : "Apply practice"}
                 </button>
               ) : (
                 <button
                   disabled
-                  className="rounded-2xl bg-white/20 px-3 py-2 text-sm font-semibold text-white backdrop-blur sm:w-auto"
+                  className="w-full rounded-2xl bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur sm:w-auto"
                   title="Already applied"
                 >
                   Applied ✔
@@ -181,7 +181,7 @@ export default function PracticeDetailsPage() {
                   onClick={() =>
                     navigate(`/app/practices?submitOutcomeFor=${practiceId}`)
                   }
-                  className="rounded-2xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 sm:w-auto"
+                  className="w-full rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 sm:w-auto"
                 >
                   Submit outcome
                 </button>
@@ -192,13 +192,13 @@ export default function PracticeDetailsPage() {
                 onClick={() =>
                   navigate(`/app/discussions?practiceId=${practiceId}`)
                 }
-                className="rounded-2xl bg-white/15 px-3 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20 sm:w-auto"
+                className="w-full rounded-2xl bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20 sm:w-auto"
               >
                 Comments
               </button>
               <button
                 onClick={() => setReportOpen(true)}
-                className="rounded-2xl bg-white/15 px-3 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20 sm:w-auto inline-flex items-center gap-2"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur hover:bg-white/20 sm:w-auto"
               >
                 <Flag className="h-4 w-4" />
                 Report
@@ -213,7 +213,7 @@ export default function PracticeDetailsPage() {
         </div>
 
         {/* META CHIPS (placeholders for later DB tables) */}
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2 sm:mt-4">
           {[
             { label: "Crop", value: practice?.cropType || "--" },
             { label: "Problem", value: practice?.problemType || "--" },
@@ -234,7 +234,7 @@ export default function PracticeDetailsPage() {
         </div>
 
         {/* STATS */}
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-3">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3 lg:grid-cols-3">
           {[
             { label: "Reports", value: statValues.totalReports },
             { label: "Effective", value: statValues.effective },
@@ -258,7 +258,7 @@ export default function PracticeDetailsPage() {
         </div>
 
         {/* OVERVIEW */}
-        <div className="mt-5 space-y-4 p-3 sm:mt-7">
+        <div className="mt-4 space-y-3 p-0 sm:mt-6 sm:space-y-4 sm:p-3">
           <div>
             <h2 className="text-base font-bold sm:text-lg">Overview</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300/80">

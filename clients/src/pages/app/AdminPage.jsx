@@ -46,7 +46,7 @@ function downloadCsv(filename, rows) {
 
 function StatCard({ icon, label, value, sub }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+    <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
       <div className="flex items-start gap-3">
         <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-600 text-white">
           {icon}
@@ -175,9 +175,9 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="p-3 space-y-4 text-slate-900 dark:text-slate-100">
+    <div className="space-y-3 px-3 py-3 text-slate-900 dark:text-slate-100 sm:space-y-4 sm:px-4 md:px-6">
       {/* Header */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -239,16 +239,16 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Users */}
-      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 overflow-hidden">
-        <div className="border-b border-slate-200 p-4 dark:border-white/10">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 lg:rounded-3xl">
+        <div className="border-b border-slate-200 p-3 sm:p-4 dark:border-white/10">
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">User management</p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-300/70">
             Search, change roles, suspend accounts, and adjust credibility score.
           </p>
 
           {/* Filters */}
-          <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
-            <div className="relative w-full md:flex-1">
+          <div className="mt-3 flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-center">
+            <div className="relative w-full lg:flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 value={q}
@@ -259,12 +259,12 @@ export default function AdminDashboardPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:flex md:gap-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:gap-3">
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
-                hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 md:w-[160px]"
+                hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 lg:w-[160px]"
               >
                 <option value="ALL">All status</option>
                 <option value="ACTIVE">Active</option>
@@ -275,7 +275,7 @@ export default function AdminDashboardPage() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none
-                hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 md:w-[180px]"
+                hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 lg:w-[180px]"
               >
                 <option value="ALL">All roles</option>
                 <option value="USER">User</option>
@@ -286,7 +286,7 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={applyFilters}
-              className="w-full rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 md:w-auto md:min-w-[110px]"
+              className="w-full rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 lg:w-auto lg:min-w-[110px]"
             >
               Apply
             </button>

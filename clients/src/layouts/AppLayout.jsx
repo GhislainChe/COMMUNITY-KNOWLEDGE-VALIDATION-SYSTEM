@@ -195,9 +195,9 @@ export default function AppLayout() {
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0b1220] dark:text-slate-100">
       {/* TOP NAVBAR */}
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-[#0b1220]/70">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-4 md:px-6 py-2">
           {/* Left: Brand */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <div className="text-lg tracking-wide">
               <span className="font-brand font-semibold">CKVS</span>
             </div>
@@ -212,7 +212,7 @@ export default function AppLayout() {
           </div>
 
           {/* Right: actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* hamburger menu for mobile */}
             <button
               onClick={() => setMobileNavOpen(true)}
@@ -271,7 +271,7 @@ export default function AppLayout() {
           />
 
           <div className="absolute left-0 top-0 h-full w-[85%] max-w-[320px] animate-[slideIn_220ms_ease-out]">
-            <div className="h-full rounded-r-3xl border border-slate-200 bg-white p-4 shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
+            <div className="h-full rounded-r-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-xl dark:border-white/10 dark:bg-[#0b1220]">
               <div className="flex items-center justify-between">
                 <div className="text-lg tracking-wide">
                   <span className="font-brand font-semibold">CKVS</span>
@@ -299,11 +299,11 @@ export default function AppLayout() {
                 Preserving and validating knowledge
               </p>
 
-              <nav className="mt-5 space-y-2">
+              <nav className="mt-4 space-y-2">
                 <NavLinks onClick={() => setMobileNavOpen(false)} />
               </nav>
 
-              <div className="mt-6 border-t border-slate-200 pt-4 dark:border-white/10">
+              <div className="mt-4 border-t border-slate-200 pt-3 dark:border-white/10">
                 <button
                   onClick={() => {
                     setMobileNavOpen(false);
@@ -322,14 +322,14 @@ export default function AppLayout() {
       )}
 
       {/* BODY */}
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-1 py-3 md:grid-cols-[260px_1fr] h-[calc(100vh-72px)]">
+      <div className="mx-auto grid h-[calc(100vh-72px)] max-w-7xl grid-cols-1 gap-0 px-0 py-0 sm:gap-4 sm:px-4 sm:py-3 md:grid-cols-[260px_1fr] md:px-6 lg:gap-6">
         {/* Sidebar */}
-        <aside className="hidden md:block h-full sticky top-0 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <aside className="sticky top-0 hidden h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/5 md:block lg:rounded-3xl">
           <nav className="space-y-2">
             <NavLinks />
           </nav>
 
-          <div className="mt-6 border-t border-slate-200 pt-4 dark:border-white/10">
+          <div className="mt-4 border-t border-slate-200 pt-3 dark:border-white/10 lg:mt-6 lg:pt-4">
             <button
               onClick={handleLogout}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900
@@ -342,7 +342,7 @@ export default function AppLayout() {
         </aside>
 
         {/* Main content */}
-        <main className="h-full overflow-y-auto rounded-3xl border border-slate-200 bg-white p-0 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <main className="h-full overflow-y-auto rounded-none border border-slate-200 bg-white p-0 shadow-sm dark:border-white/10 dark:bg-white/5 sm:rounded-2xl lg:rounded-3xl">
           <Outlet />
         </main>
       </div>

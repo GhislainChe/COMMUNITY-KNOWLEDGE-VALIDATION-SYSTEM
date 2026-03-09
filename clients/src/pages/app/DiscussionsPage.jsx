@@ -256,10 +256,10 @@ export default function DiscussionsPage() {
   if (loadingList) return <DiscoverListSkeleton count={6} />;
   if (errorList)
     return (
-      <div className="flex items-end justify-between gap-4">
+        <div className="flex items-end justify-between gap-3">
         <div className="space-y-2 p-3">
           <h1 className="font-heading text-2xl font-semibold">Discussions</h1>
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
             Error getting your discussions<b> Check your internet connection and try again</b>.
           </div>
         </div>
@@ -273,22 +273,22 @@ export default function DiscussionsPage() {
     const systemCount = notifications.length;
 
     return (
-      <div className="p-3">
+      <div className="px-3 py-3 sm:px-4 md:px-6">
         <h1 className="font-heading text-2xl font-semibold">Discussions</h1>
         <p className="mt-0 text-slate-600 dark:text-slate-300/70">
           Your discussion threads.
         </p>
 
-        <div className="mt-4">
+        <div className="mt-3 sm:mt-4">
           {/* ✅ SYSTEM THREAD CARD */}
           {systemCount > 0 && (
             <button
               type="button"
               onClick={() => navigate("/app/discussions?practiceId=system")}
-              className="w-full rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left shadow-sm transition hover:bg-amber-100
+              className="w-full rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:p-4 text-left shadow-sm transition hover:bg-amber-100
               dark:border-amber-500/20 dark:bg-amber-500/10 dark:hover:bg-amber-500/15"
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <div className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500/20 text-amber-800 dark:text-amber-200">
@@ -326,14 +326,14 @@ export default function DiscussionsPage() {
 
           {/* no threads */}
           {!loadingList && !errorList && threads.length === 0 && systemCount === 0 && (
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
+            <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-300/80">
               You haven’t commented on any practice yet.
             </div>
           )}
 
           {/* threads */}
           {!loadingList && !errorList && threads.length > 0 && (
-            <div className="mt-6 space-y-3">
+            <div className="mt-4 space-y-3 sm:mt-5">
               {threads.map((t) => (
                 <button
                   key={t.practiceId}
@@ -341,10 +341,10 @@ export default function DiscussionsPage() {
                   onClick={() =>
                     navigate(`/app/discussions?practiceId=${t.practiceId}`)
                   }
-                  className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:bg-slate-50
+                  className="w-full rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 text-left shadow-sm transition hover:bg-slate-50
                    dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-slate-900 dark:text-white">
                         {t.title || "Practice discussion"}
@@ -387,9 +387,9 @@ export default function DiscussionsPage() {
   // ===============================
   if (isSystemThread) {
     return (
-      <div className="flex h-full flex-col p-2">
+      <div className="flex h-full flex-col px-3 py-3 sm:px-4 md:px-6">
         {/* Header */}
-        <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10">
+        <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10 sm:mb-4">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -425,7 +425,7 @@ export default function DiscussionsPage() {
 
           {notifications.map((n) => (
             <div key={n.notificationId} className="flex justify-start">
-              <div className="max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm bg-amber-50 text-slate-900 border border-amber-200
+              <div className="max-w-[90%] rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-slate-900 shadow-sm sm:max-w-[85%] sm:px-4 sm:py-3
               dark:bg-amber-500/10 dark:text-slate-100 dark:border-amber-500/20">
                 <p className="mb-1 text-[11px] font-semibold text-amber-800 dark:text-amber-200">
                   System
@@ -466,9 +466,9 @@ export default function DiscussionsPage() {
   // ✅ PRACTICE THREAD MODE (normal chat)
   // ===============================
   return (
-    <div className="flex h-full flex-col p-2">
+    <div className="flex h-full flex-col px-3 py-3 sm:px-4 md:px-6">
       {/* Header */}
-      <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="mb-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/5 sm:mb-4">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -524,7 +524,7 @@ export default function DiscussionsPage() {
               className={`flex ${isSystem ? "justify-center" : isMine ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                className={`max-w-[90%] rounded-2xl px-3 py-2.5 text-sm shadow-sm sm:max-w-[85%] sm:px-4 sm:py-3 ${
                   isSystem
                     ? "bg-amber-50 text-slate-900 border border-amber-200 dark:bg-amber-500/10 dark:text-slate-100 dark:border-amber-500/20"
                     : isMine
@@ -662,14 +662,14 @@ export default function DiscussionsPage() {
           onKeyDown={onKeyDown}
           rows={1}
           placeholder={replyTo ? "Write a reply..." : "Write a message..."}
-          className="flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-400"
+          className="flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-400 sm:px-4 sm:py-3"
         />
 
         <button
           type="button"
           disabled={sending}
           onClick={() => (replyTo ? handleReplySend() : handleSend())}
-          className="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+          className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
         >
           {sending ? "Sending..." : "Send"}
         </button>
