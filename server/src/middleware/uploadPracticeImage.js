@@ -1,21 +1,14 @@
-const fs = require("fs");
 const multer = require("multer");
-const path = require("path");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const { cloudinary } = require("../config/cloudinary");
 
-const uploadsDir = path.join(__dirname, "../../uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const safeExt = ext || ".jpg";
-    cb(null, `practice_${Date.now()}_${Math.round(Math.random() * 1e9)}${safeExt}`);
-  },
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => ({
+    folder: "ckvs_practices",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    public_id: `practice_${Date.now()}_${Math.round(Math.random() * 1e9)}`,
+  }),
 });
 
 function fileFilter(req, file, cb) {

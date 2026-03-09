@@ -31,7 +31,7 @@ router.post("/", requireAuth, uploadPracticeImage.single("image"), async (req, r
     }
 
     const userId = req.user.userId;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const imageUrl = req.file ? req.file.path : null;
 
     const [result] = await pool.query(
       `INSERT INTO practices 
